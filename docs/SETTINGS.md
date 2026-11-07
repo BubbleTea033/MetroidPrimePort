@@ -373,6 +373,12 @@
   later with its type's default mappings gets the preset then, and with no
   controller connected the Remap page shows the preset's mappings. Applying a
   preset of your own clears it.
+- Player 1 on a Steam Deck: the Deck's built-in controller ranks below any other controller for
+  Player 1. A connected controller takes Player 1 from it whatever Steam's order, and the Deck
+  gets it back when that controller leaves. Choosing Player 1's controller on the Remap page saves
+  it (`controller_ports.dat`), and that choice overrides this. When Steam reports a controller by
+  its untranslated name key (`#SettingsController_...`), its mapping file is the one of the same
+  vid/pid under its real name, so one controller keeps one mapping.
 - Swap the Scan and X-Ray visor buttons (Controls > Options, persisted as
   `swap_scan_xray`, off by default): each visor takes the other's D-pad
   direction, as in Remastered (D-pad right Scan, left X-Ray).
