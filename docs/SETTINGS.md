@@ -627,9 +627,9 @@
   primary, secondary and accent, the Phazon Suit glow and accent (its body is nearly black
   and stays as it is). The suit's own diffuse textures are recoloured from your disc (the
   slot texels' hues move to the picked one, keeping their shading), so cutscenes, the pause
-  screen's doll, the first-person arm and the morph ball (the generated balls above too)
-  all change; Samus's face and the glow, visor and reflection maps stay. Made on Apply and
-  kept in `generated/suit-colours/<suit>/` in the user folder (remade when the picks, the
+  screen's doll, the first-person arm, the morph ball (the generated balls above too) and
+  the in-game body (morphing, pickup cutscenes, the third-person camera) all change;
+  Samus's face and the glow, visor and reflection maps stay. Made on Apply and kept in `generated/suit-colours/<suit>/` in the user folder (remade when the picks, the
   generator or the disc change). A texture a mod brings (the Remastered import) is left as
   it is. With "Suit-coloured morph balls" off, a suit that borrows another's ball shows
   that suit's colours on it. While the Dread Samus import is on (DREAD_SAMUS.md), the list
