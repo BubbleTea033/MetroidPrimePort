@@ -689,7 +689,7 @@ void UpdateFrame() {
     f.carry -= float(steps) / 60.f;
   }
   f.ev = sAverage.Update(f.measuring, f.shown[0], eff.exposure[0], eff.exposure[1], eff.bias, eff.sigma, hintSnap,
-                          std::min(steps, 30), &f.targetEv);
+                          std::min(steps, 30), &f.targetEv, staticEv, &f.shown[5]);
   const float exposure = std::exp2(3.f - f.ev);
   f.exposure = std::isfinite(exposure) && exposure > 0.f ? exposure : 0.f;
   f.hasTone = f.exposure > 0.f && f.shown[1] > 0.f && f.shown[1] < 1.f;
