@@ -191,7 +191,14 @@ Area* Prepare(const CGameArea& gameArea) {
   }
   if (!area.placed) {
     for (Placed& item : area.items) {
-      item.xf = gameArea.GetTM() * item.xf;
+      if (item.type == 2) {
+        item.xf = gameArea.GetTM() * item.xf;
+      } else {
+        // Remastered's GetSurfaceTransform (0x8913e4) takes the entity's world transform, whose
+        // rotation is the world's: only the position goes through the area, so the surface stays
+        // level in a tilted area (Hive Totem's is 8.9 degrees about x).
+        item.xf.SetTranslation(gameArea.GetTM() * item.xf.GetTranslation());
+      }
     }
     for (Filter& filter : area.filters) {
       const CVector3f world = gameArea.GetTM() * CVector3f(filter.position[0], filter.position[1], filter.position[2]);
