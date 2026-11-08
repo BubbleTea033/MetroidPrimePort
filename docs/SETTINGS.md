@@ -958,7 +958,8 @@
   rooms the map shows; Seen draws the dot only once you have looked at that
   pickup for half a second (within 40 units, in the middle half of the view,
   with a clear line from the eye; see-through surfaces such as gratings don't
-  block it; kept per save, `pickups seen`); Rooms draws no dots but tints the rooms that
+  block it; kept per save, `pickups seen`), and a collected pickup always counts
+  as seen, so its collected mark shows however fast it was grabbed; Rooms draws no dots but tints the rooms that
   still hold an uncollected pickup amber. An old saved `1` stays All. In Seen,
   Map stations show pickups (`map_station_pickups`, on by default) also marks
   every pickup in the rooms a map station has mapped (or a hint, or Reveal map,

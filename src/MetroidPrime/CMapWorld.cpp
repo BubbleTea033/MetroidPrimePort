@@ -586,12 +586,15 @@ void CMapWorld::DrawPortPickups(const CMapWorldDrawParms& parms,
       continue;
     }
     const int areaIdx = world.IGetAreaId(dot.area).Value();
-    if (seenOnly && !PortMapPickups::Seen(i) &&
+    // A pickup Samus collected was seen, even when it was grabbed before it
+    // had been in view long enough to count (CScriptPickup::PortMarkSeen).
+    const bool taken = mailbox.HasMsg(TEditorId(dot.relay));
+    if (seenOnly && !taken && !PortMapPickups::Seen(i) &&
         !(stationShows && mwInfo.IsWorldVisible(areaIdx))) {
       continue;
     }
-    const bool collected = (tracker != nullptr && tracker[i] == PortMapPickups::kC_Grey) ||
-                           mailbox.HasMsg(TEditorId(dot.relay));
+    const bool collected =
+        (tracker != nullptr && tracker[i] == PortMapPickups::kC_Grey) || taken;
     if (collected && tracker == nullptr && kinds == nullptr) {
       continue;
     }
