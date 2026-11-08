@@ -821,7 +821,6 @@ void CancelGyroRecalibration();
 float GyroRecalibrationCountdown(); // seconds left, or negative when none pending
 float GyroManualCalibrationProgress(); // 0..1 while Recalibrate samples, or negative
 bool GyroCalibrating();             // auto calibration is learning right now
-void ResetGyroCalibration();
 float GyroCalibrationConfidence();
 // Recentres the pointer-aim cursor and levels the camera pitch (the "Reset aim"
 // action; thread-safe, applied on the next aim tick).
