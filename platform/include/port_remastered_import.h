@@ -355,7 +355,9 @@ inline constexpr int kEffects = 230;
 // too (1131 placements of 24 models drew the retail model; 21 placements of 2 models still do).
 // 88: the stage record keeps each retail placement's animated flag (a reused rooms stage lost it,
 // and the retail models stage converted animation sets' models).
-inline constexpr int kRooms = 88;
+// 89: script objects sharing a place pair by the retail layer the place's lone matches put
+// their Remastered layer on (Hive Totem's normal and poison Water were swapped).
+inline constexpr int kRooms = 89;
 inline constexpr int kRoomModels = 1;  // the rooms' own models and their levels of detail
 // kText: port_remastered_text, and the font (port_remastered_font).
 // 2: text/.disc, the disc the tables were merged from (kTextDiscName).
