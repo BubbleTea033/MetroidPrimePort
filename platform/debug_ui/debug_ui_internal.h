@@ -100,6 +100,8 @@ extern bool sCrosshairCustomColor;
 extern bool sCrosshairXRay;
 extern bool sCrosshairThermal;
 extern float sCrosshairColor[3];
+extern bool sCrosshairTargetCustomColor;
+extern float sCrosshairTargetColor[3];
 extern bool sHideHelmet;
 extern bool sHideVisorEffects;
 extern bool sRevealMap;

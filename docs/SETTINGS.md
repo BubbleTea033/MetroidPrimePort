@@ -856,6 +856,12 @@
   scales their alpha (the defaults leave them as on the Wii), the size slider scales them under
   direct aim, and `remastered` draws the Remastered cursor where the aiming cursor is, without
   the old crosshair.
+- Crosshair colour on enemies (Video > Display, `crosshair_target_color`, `RRGGBB` or empty
+  for off, default off, issue #277): the crosshair fades to that colour in 0.25 s while the aim
+  ray (the pointer's under pointer aim) meets a living, active, targetable enemy that a shot of
+  the current beam would hurt (the vulnerability of the part hit, as damage asks it), and back
+  off it. Every style and Trilogy's aiming cursor; in the `remastered` style it replaces the
+  red, which then also skips enemies the beam does not hurt. Original experience ignores it.
 - Crosshair in X-Ray and Crosshair in Thermal (Video > Display, `crosshair_xray` and
   `crosshair_thermal`, default off, issue #241): off fades the aiming crosshair out in
   that visor as the game does in the Scan Visor, whatever the crosshair style (on a
