@@ -5000,6 +5000,38 @@ int CElementGen::GetParticleCountAllInternal() const {
   return ret;
 }
 
+#ifdef TARGET_PC
+bool CElementGen::PortHasAnyParticles(const CParticleGen& gen) {
+  switch (gen.Get4CharId()) {
+  case 'PART':
+    return static_cast< const CElementGen& >(gen).PortHasAnyParticlesRecursive();
+  case 'ELSC':
+    return static_cast< const CParticleElectric& >(gen).PortHasAnyParticlesRecursive();
+  case 'SWHC':
+    return gen.GetParticleCount() > 1;
+  default:
+    return false;
+  }
+}
+
+bool CElementGen::PortHasAnyParticlesRecursive() const {
+  if (x25c_activeParticleCount != 0) {
+    return true;
+  }
+  for (AUTO(it, x290_activePartChildren.begin()); it != x290_activePartChildren.end(); ++it) {
+    if (PortHasAnyParticles(**it)) {
+      return true;
+    }
+  }
+  for (size_t i = 0; i < xPortPsps.size(); ++i) {
+    if (xPortPsps[i].sys != nullptr && PortHasAnyParticles(*xPortPsps[i].sys)) {
+      return true;
+    }
+  }
+  return false;
+}
+#endif
+
 int CElementGen::GetSystemCount() {
   int ret = static_cast< int >(x25c_activeParticleCount) > 0;
   for (AUTO(it, x290_activePartChildren.begin()); it != x290_activePartChildren.end(); ++it) {

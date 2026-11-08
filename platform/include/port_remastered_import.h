@@ -283,7 +283,8 @@ inline constexpr int kModels = 37;
 // 228: a model Remastered keeps under a carried-over id converts as the effect's own (drain debris).
 // 229: Remastered decals (DPSM) written over their paired DPSCs, with their material (shader, blend,
 //      texture wrap, parameter defaults), SMTR and TMTR.
-inline constexpr int kEffects = 229;
+// 230: an inactive primitive (0, 4, 5, or 3 without PMDL) drops its GRTE: it makes no particles.
+inline constexpr int kEffects = 230;
 // 20: two rooms matching one area write only the closer match's files, not the later room's.
 // 21: roomenv version 22, the world master's hints driven by its camera volumes (the table in every roomenv).
 // 22: a master's InventoryActivator fired by the camera going under water drives its hints (kSenderCameraWaterItem).
