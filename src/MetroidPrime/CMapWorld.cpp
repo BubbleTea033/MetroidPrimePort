@@ -608,8 +608,13 @@ void CMapWorld::DrawPortPickups(const CMapWorldDrawParms& parms,
     for (int j = 0; j < bfsInfos.size() && !drawn; ++j) {
       drawn = bfsInfos[j].GetAreaIndex() == areaIdx;
     }
-    if (!drawn || !GetMapArea(areaIdx)->GetIsVisibleToAutoMapper(mwInfo.IsWorldVisible(areaIdx),
-                                                                 mwInfo.IsAreaVisible(areaIdx))) {
+    // A secret room (shown only once visited) keeps its dot once the map station
+    // has shown the world, though the room itself stays hidden until then: its
+    // pickup is still one to find.
+    const bool worldVisible = mwInfo.IsWorldVisible(areaIdx);
+    const bool areaVisible = mwInfo.IsAreaVisible(areaIdx);
+    if (!drawn || !(worldVisible || areaVisible ||
+                    GetMapArea(areaIdx)->GetIsVisibleToAutoMapper(worldVisible, areaVisible))) {
       continue;
     }
     if (!setUp) {

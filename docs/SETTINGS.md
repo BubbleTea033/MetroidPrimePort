@@ -955,7 +955,8 @@
   default; Tracker page: Off, Seen, Rooms, All; the pause row cycles Off, Seen
   and All, with Rooms shown as the third value when set elsewhere): All draws a
   plain white dot on the map and minimap for every pickup not yet collected, in
-  rooms the map shows; Seen draws the dot only once you have looked at that
+  rooms the map shows (a secret room that a map station doesn't show, such as
+  Quarantine Monitor, gets its dot once the map station has been used); Seen draws the dot only once you have looked at that
   pickup for half a second (within 40 units, in the middle half of the view,
   with a clear line from the eye; see-through surfaces such as gratings don't
   block it; kept per save, `pickups seen`), and a collected pickup always counts
