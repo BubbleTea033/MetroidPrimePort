@@ -1070,7 +1070,8 @@ int main(int argc, char** argv) {
     // Built pipelines stay until memory runs short (issue #187), areas left long ago included, so
     // walking back is free. Lazy mode trims on the system's memory warnings (port_memory_log.cpp) and
     // on a headroom check every 5 s (MemAvailable; Windows: also commit and the GPU budget): under 1024 MiB available it releases what a minute of
-    // frames didn't draw, under 512 MiB all but what the last frames drew (GLOBAL pipelines stay).
+    // frames didn't draw, under 512 MiB what 30 s didn't (GLOBAL pipelines stay; a shorter window freed
+    // actors that left the view for a moment, then hid them while they rebuilt).
     // An 8 GB phone or tablet runs the game with 2-4 GB available; Android's own low-memory
     // threshold (logged with each memory warning) is a few hundred MiB, so 1024 trims well before
     // the system starts killing apps and 512 just above it. Android has no moderate level: a 3-4 GB

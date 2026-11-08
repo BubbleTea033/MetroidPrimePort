@@ -1799,7 +1799,7 @@ headers, applies the same rule to its own on/off variables (`MP_LOG_COPY_TEX`,
   `MP_PIPELINE_TRIM_MIB=<n>` (default 1024; 0, off, on Android) releases those a minute of frames didn't
   draw when less than that is available (free RAM; on Windows also free commit and
   the GPU's memory budget), `MP_PIPELINE_TRIM_SEVERE_MIB=<n>` (default
-  512) all but what the last frames drew; 0 turns a level off. GLOBAL pipelines (Samus and
+  512) those 30 s of frames didn't draw, as do Android's memory warnings in play; 0 turns a level off. GLOBAL pipelines (Samus and
   her morph ball, gun, HUD, visors) are never trimmed.
   `MP_PIPELINE_EVICT=<frames>` adds a fixed sweep of pipelines idle that long.
 - `MP_PIPELINE_PBR=<0|1>`: compile the cached PBR pipelines at startup. By default
