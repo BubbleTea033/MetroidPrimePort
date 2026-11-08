@@ -3,6 +3,7 @@
 #include "port_room_env_internal.h"
 
 #include "port_pause_lighting.h"
+#include "port_utf8_path.h"
 
 namespace PortRoomEnv {
 namespace EnvDetail {
@@ -538,7 +539,7 @@ void SendBrdfLut() {
   std::vector<uint8_t> data;
   const std::string path = PortMods::BrdfLutPath();
   if (!path.empty()) {
-    std::ifstream in(PortGci::PathFromString(path), std::ios::binary);
+    std::ifstream in(PortUtf8::FromUtf8(path), std::ios::binary);
     data = ReadAll(in);
     std::string error;
     if (!in || !ValidBrdfLut(data, error)) {
@@ -756,7 +757,7 @@ bool ThermalPass(bool hot, float areaHeat) {
       return false;
     }
     sThermalLutSent = true;
-    std::ifstream in(PortGci::PathFromString(path), std::ios::binary);
+    std::ifstream in(PortUtf8::FromUtf8(path), std::ios::binary);
     const std::vector<uint8_t> data = ReadAll(in);
     if (!in || !GXPortSetThermalLut(data.data(), uint32_t(data.size()))) {
       PortLog::Write("room env: %s: cannot read the thermal gradient\n", path.c_str());
@@ -2307,7 +2308,7 @@ uint32_t MaterialCube(uint32_t fileId, float params[4]) {
     if (path.empty()) {
       return 0;
     }
-    std::ifstream in(PortGci::PathFromString(path), std::ios::binary);
+    std::ifstream in(PortUtf8::FromUtf8(path), std::ios::binary);
     const std::vector<uint8_t> data = ReadAll(in);
     const auto le32 = [&](size_t at) {
       return uint32_t(data[at]) | uint32_t(data[at + 1]) << 8 | uint32_t(data[at + 2]) << 16 |

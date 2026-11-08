@@ -33,6 +33,7 @@ struct SDL_Window;
 
 namespace DebugUi {
 
+using port::ParseBool;
 using port::Trim;
 
 // debug_ui.cpp: the settings, runtime switches and the state shared across threads.
@@ -276,7 +277,6 @@ extern std::string sRemasteredSkip;
 extern std::string sRemasteredHide;
 
 std::string SettingsFilePath();
-bool ParseBool(const std::string& value);
 void MarkDirty();
 PortRemastered::ImportParts RemasteredImportParts();
 void SetRemasteredImportParts(const PortRemastered::ImportParts& parts);

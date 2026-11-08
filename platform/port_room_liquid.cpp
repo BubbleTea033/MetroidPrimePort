@@ -9,6 +9,7 @@
 #include "port_log.h"
 #include "port_mods.h"
 #include "port_room_env.h"
+#include "port_utf8_path.h"
 
 #include "Kyoto/CResFactory.hpp"
 #include "Kyoto/CSimplePool.hpp"
@@ -129,7 +130,7 @@ void Load(uint32_t mrea, Area& area) {
   if (path.empty() || gpResourceFactory == nullptr) {
     return;
   }
-  std::ifstream in(PortGci::PathFromString(path), std::ios::binary);
+  std::ifstream in(PortUtf8::FromUtf8(path), std::ios::binary);
   const std::vector< uint8_t > data = ReadAll(in);
   std::vector< Surface > surfaces;
   std::string error;

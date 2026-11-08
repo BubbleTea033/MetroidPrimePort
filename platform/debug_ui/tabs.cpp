@@ -14,6 +14,7 @@
 #include "port_input_remap_ui.h"
 #include "port_data_folder.h"
 #include "port_build_info.h"
+#include "port_utf8_path.h"
 
 #include "MetroidPrime/Player/CGameOptions.hpp"
 #include "MetroidPrime/Player/CGameState.hpp"
@@ -123,7 +124,7 @@ void DrawSettingsSection() {
       } else {
         const std::string& folder = PortPaths::UserFolder();
         const PortConfigReset::Result result =
-            PortConfigReset::Reset(PortConfigReset::detail::FromUtf8Path(folder.empty() ? "./" : folder));
+            PortConfigReset::Reset(PortUtf8::FromUtf8(folder.empty() ? "./" : folder));
         if (!result.ok) {
           sResetError = result.error;
           if (!result.backupDir.empty()) {

@@ -50,6 +50,7 @@
 #include <SDL3/SDL_platform_defines.h>
 #if defined(SDL_PLATFORM_IOS)
 #include "port_ios.h"
+#include "port_utf8_path.h"
 #endif
 #include <SDL3/SDL_iostream.h>
 #include <SDL3/SDL_messagebox.h>
@@ -183,7 +184,7 @@ DiscMatch MatchDiscImage(const std::filesystem::path& path) {
     }
     // Through SDL with a UTF-8 name: std::fopen on Windows takes the ANSI code
     // page, which cannot name every folder a user might unpack the game into.
-    SDL_IOStream* file = SDL_IOFromFile(PortPaths::detail::ToUtf8(path).c_str(), "rb");
+    SDL_IOStream* file = SDL_IOFromFile(PortUtf8::ToUtf8(path).c_str(), "rb");
     if (file == nullptr) {
         return DiscMatch::No;
     }
@@ -222,7 +223,7 @@ std::string FindDiscNextToExecutable() {
     // and this runs before anything that could report it, so nothing escapes.
     try {
         std::error_code ec;
-        const fs::path baseDir = PortPaths::detail::FromUtf8(base);
+        const fs::path baseDir = PortUtf8::FromUtf8(base);
         std::vector<fs::path> dirs{baseDir};
         for (fs::directory_iterator it(baseDir, ec), end; !ec && it != end; it.increment(ec)) {
             std::error_code entryEc;
@@ -246,10 +247,10 @@ std::string FindDiscNextToExecutable() {
             for (const fs::path& file : files) {
                 const DiscMatch match = MatchDiscImage(file);
                 if (match == DiscMatch::Yes) {
-                    return PortPaths::detail::ToUtf8(file);
+                    return PortUtf8::ToUtf8(file);
                 }
                 if (match == DiscMatch::Maybe && maybe.empty()) {
-                    maybe = PortPaths::detail::ToUtf8(file);
+                    maybe = PortUtf8::ToUtf8(file);
                 }
             }
         }

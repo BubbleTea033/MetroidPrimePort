@@ -315,11 +315,6 @@ std::string SettingsFilePath() {
   return (dir.empty() ? std::string("./") : dir) + "port_settings.ini";
 }
 
-bool ParseBool(const std::string& value) {
-  return value == "1" || value == "true" || value == "on" || value == "yes";
-}
-
-
 void MarkDirty() { sSettingsDirty = true; }
 
 PortRemastered::ImportParts RemasteredImportParts() {

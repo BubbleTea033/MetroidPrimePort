@@ -21,6 +21,7 @@
 #include "port_dread_samus_mod.h"
 #include "port_echoes_suits_mod.h"
 #include "port_textures.h"
+#include "port_utf8_path.h"
 
 #include <dolphin/gx/GXExtra.h>
 
@@ -721,7 +722,7 @@ std::string SettingsText() {
 
 void LoadSettings() {
   const std::string path = SettingsFilePath();
-  std::ifstream file(PortPaths::detail::FromUtf8(path));
+  std::ifstream file(PortUtf8::FromUtf8(path));
   if (!file.is_open()) {
     return;
   }
@@ -812,7 +813,7 @@ void SaveSettings() {
   // Write a temporary file and rename it over the settings, so a crash or kill
   // mid-write (this runs on every slider release and at exit) cannot leave a
   // truncated file that resets everything on the next start.
-  const std::filesystem::path target = PortPaths::detail::FromUtf8(path);
+  const std::filesystem::path target = PortUtf8::FromUtf8(path);
   std::filesystem::path partial = target;
   partial += ".tmp";
   std::ofstream file(partial, std::ios::trunc);
