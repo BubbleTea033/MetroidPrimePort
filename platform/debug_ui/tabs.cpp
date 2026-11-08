@@ -28,10 +28,6 @@
 
 #include <string>
 
-namespace aurora {
-void request_screenshot() noexcept;
-}
-
 namespace PortDebug {
 
 // The same path as closing the window: the main loop sees AURORA_EXIT and shuts down cleanly.
@@ -53,7 +49,7 @@ void DrawGameSection() {
   const std::string shotLabel =
       (shotKeys.empty() ? std::string("Screenshot") : "Screenshot (" + shotKeys + ")") + "###screenshot";
   if (ImGui::Button(shotLabel.c_str())) {
-    aurora::request_screenshot();
+    PortPhoto::RequestScreenshot();
   }
   ImGui::SameLine();
   const std::string photoKeys = PortInputRemap::BindingsText(PortInput::Action::PhotoMode, " / ");
