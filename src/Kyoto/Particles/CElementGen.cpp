@@ -4647,7 +4647,15 @@ void CElementGen::RenderModels() {
   CVector3f pmopVec(0.f, 0.f, 0.f);
 
   CTransform4f orient(CTransform4f::Identity());
-  if (!x28_loadedGenDesc->x31_27_PMOO) {
+#ifdef TARGET_PC
+  // Remastered reads PMOO and discards it (CreateGPSM 0x259094): SolveParticleTransform 0x246f14
+  // always bases a model particle on the system orientation Q_l, so a converted PART (PIRN) keeps
+  // x1d8 whatever retail's default PMOO says. kMOT_One already takes it from the birth matrix.
+  const bool portKeepsOrient = x28_loadedGenDesc->xPortIrnd && x2c_orientType != kMOT_One;
+#else
+  const bool portKeepsOrient = false;
+#endif
+  if (!x28_loadedGenDesc->x31_27_PMOO || portKeepsOrient) {
     orient = x1d8_orientation;
   }
   orient = orient * x22c_globalOrientation;
