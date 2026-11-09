@@ -153,6 +153,7 @@ list(APPEND MP_GAME_SOURCES
     platform/port_raster_font.cpp
     platform/port_morph_ball.cpp
     platform/port_automapper.cpp
+    platform/port_text.cpp
     platform/port_particle_vfx_read.cpp
     platform/port_element_gen.cpp
     platform/port_entity_schema.cpp
