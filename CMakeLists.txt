@@ -189,7 +189,11 @@ if(MSVC)
         target_compile_options(mp_game PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/Zc:strictStrings->)
     endif()
 else()
+    # The game was written for Metrowerks, which neither assumes strict aliasing
+    # nor that signed overflow can't happen; the decomp reads floats through int
+    # pointers (__HI in CVector3f.cpp). MSVC and clang-cl don't alias-optimise.
     target_compile_options(mp_game PRIVATE
+        -fno-strict-aliasing -fwrapv
         -Wformat -Werror=return-type -Wno-narrowing -Wno-multichar -Wno-write-strings
         -include ${CMAKE_CURRENT_SOURCE_DIR}/platform/compat.h)
 endif()
