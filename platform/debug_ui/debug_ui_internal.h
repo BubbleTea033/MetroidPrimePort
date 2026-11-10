@@ -88,7 +88,8 @@ extern bool sMenuStandardButtons;
 extern bool sMenuExit;
 extern std::atomic< int > sPromptGlyphs; // index into kPromptGlyphs
 inline constexpr const char* kPromptGlyphs[] = {"auto",   "xbox",     "playstation",
-                                                "switch", "gamecube", "keyboard"};
+                                                "switch", "gamecube", "keyboard",
+                                                "steamdeck"};
 extern bool sShowShaderCompilation;
 extern bool sShowMenuHint;
 extern int sHudScale;
