@@ -195,6 +195,9 @@ else()
     target_compile_options(mp_game PRIVATE
         -fno-strict-aliasing -fwrapv
         -Wformat -Werror=return-type -Wno-narrowing -Wno-multichar -Wno-write-strings
+        # rstl's smart pointers delete in headers: on an incomplete type that silently skips
+        # the destructor, and which unit's copy survives the link is arbitrary.
+        $<$<COMPILE_LANGUAGE:CXX>:-Werror=delete-incomplete>
         -include ${CMAKE_CURRENT_SOURCE_DIR}/platform/compat.h)
 endif()
 
