@@ -2011,8 +2011,9 @@ void DrawActiveController() {
     }
     ImGui::EndCombo();
   }
-  ImGui::SetItemTooltip("Controller used to play and record bindings. The choice is saved and restored on "
-                        "reconnect. Keyboard and touch remain available. 'Controller bindings for' selects "
+  ImGui::SetItemTooltip("Controller used to play and record bindings. Every controller plays: the one used "
+                        "last, touch controls included, takes over. The choice here is saved and applies on "
+                        "reconnect. Keyboard remains available. 'Controller bindings for' selects "
                         "the profile to edit, independently.");
 }
 

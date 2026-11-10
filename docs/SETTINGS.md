@@ -489,6 +489,9 @@
   crosshair) and "Controller settings" (stick aim and dead
   zones). **Remap > Active controller** selects any detected gamepad, including
   one assigned to player 2 or later; the choice is saved and restored on reconnect.
+  Every connected controller plays without choosing it: the one used last, the touch controls
+  included, takes over (not saved). While the saved controller is away another one, or the touch
+  controls, stands in, and picking the touch controls (or the Steam Deck's own pad) saves no choice.
   Select it here before recording its bindings in Remap. Remap's "Controller bindings for" selects
   binding profiles, not the controller used to play. Every binding is on **Controls > Remap**, below.
 - **Controls > Remap** lists all devices' bindings together, with keyboard, mouse, controller

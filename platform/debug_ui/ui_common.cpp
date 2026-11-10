@@ -481,6 +481,7 @@ void UpdateControllerNav() {
   }
   UpdateUiScale();
   ApplyThemeIfChanged();
+  TakePadPortForLastUsed();
   // The Steam Controller's and Deck's own reports (gyro and back buttons) first, so the polls
   // after this read this frame's.
   PortSteamTriton::Update();

@@ -286,6 +286,9 @@ void SetRemasteredImportParts(const PortRemastered::ImportParts& parts);
 void ApplyLiveSplit();
 void ApplyDiscord();
 void ApplyUpdateCheck();
+// Once per frame: the pad used since the last call takes pad port 0, unsaved (PADTakeFirstPort),
+// so every connected pad plays.
+void TakePadPortForLastUsed();
 bool SDLCALL debug_event_watch(void*, SDL_Event* event);
 // Loads the settings file and the MP_* overrides on first use; every accessor calls it.
 void EnsureInitialized();
