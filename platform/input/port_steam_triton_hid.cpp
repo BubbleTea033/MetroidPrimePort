@@ -499,7 +499,11 @@ bool Motion(float gyro[3], float accel[3]) {
 }
 
 // (The gyro alone may keep the controllers open: the back buttons only with their setting.)
+#if defined(__linux__) && !defined(__ANDROID__)
 uint32_t Paddles() { return BackButtonsWanted() ? sStats.paddles : 0; }
+#else
+uint32_t Paddles() { return 0; }
+#endif
 
 Stats GetStats() { return sStats; }
 
