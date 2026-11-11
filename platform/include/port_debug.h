@@ -773,6 +773,14 @@ void SetGrappleToggle(bool enabled);
 // latches until pressed again or the ball leaves its track; morph ball only.
 bool SpiderToggle();
 void SetSpiderToggle(bool enabled);
+// Screw Attack (experimental, off by default): Metroid Prime 2's Screw Attack in Prime 1. A third
+// jump press in the air after a Space Jump, while moving forward, curls Samus into the ball, which
+// can then jump up to five more times across a gap and damages what it touches; it ends on
+// landing, on a wall, or when a jump is mistimed. Needs the Space Jump Boots and the Morph Ball.
+// The rules are Echoes' (CMorphBall::ComputeScrewAttackMovement), without its wall jump, effects
+// and Samus's spin animation (CPlayer::JumpInput, CMorphBall::PortComputeScrewAttack).
+bool ScrewAttack();
+void SetScrewAttack(bool enabled);
 // Aim Lock-On: lock onto the target nearest the crosshair instead of retail's
 // pick, which prefers a nearer target (CPlayer::FindBestOrbitableObject).
 bool AimLockOn();

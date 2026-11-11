@@ -300,6 +300,8 @@ bool ApplySetting(std::string_view keyView, std::string_view valueView) {
     s.scanShoot = ParseBool(value);
   } else if (key == "spider_toggle") {
     s.spiderToggle = ParseBool(value);
+  } else if (key == "screw_attack") {
+    s.screwAttack = ParseBool(value);
   } else if (key == "aim_lock_on") {
     s.aimLockOn = ParseBool(value);
   } else if (key == "sticky_charge") {
@@ -374,6 +376,7 @@ void WriteGameplaySettings(std::ostream& out) {
   out << "grapple_shoot=" << (s.grappleShoot ? 1 : 0) << '\n';
   out << "scan_shoot=" << (s.scanShoot ? 1 : 0) << '\n';
   out << "spider_toggle=" << (s.spiderToggle ? 1 : 0) << '\n';
+  out << "screw_attack=" << (s.screwAttack ? 1 : 0) << '\n';
   out << "aim_lock_on=" << (s.aimLockOn ? 1 : 0) << '\n';
   out << "sticky_charge=" << (s.stickyCharge ? 1 : 0) << '\n';
   out << "rapid_charge=" << (s.rapidCharge ? 1 : 0) << '\n';

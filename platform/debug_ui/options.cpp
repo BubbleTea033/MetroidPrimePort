@@ -1419,6 +1419,13 @@ bool SpiderToggle() {
 
 void SetSpiderToggle(bool enabled) { StoreSetting(sInput.spiderToggle, enabled); }
 
+bool ScrewAttack() {
+  EnsureInitialized();
+  return sInput.screwAttack && !sOriginalExperience;
+}
+
+void SetScrewAttack(bool enabled) { StoreSetting(sInput.screwAttack, enabled); }
+
 bool AimLockOn() {
   EnsureInitialized();
   return sInput.aimLockOn && !sOriginalExperience;

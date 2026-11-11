@@ -2632,17 +2632,47 @@ static float MorphTransitionDuration() { return 1.f; }
 #endif
 
 void CPlayer::UpdateMorphBallState(float dt, const CFinalInput& input, CStateManager& mgr) {
+#ifdef TARGET_PC
+  // Screw Attack (CMorphBall.hpp) presses the button itself, as Echoes' pending screw attack
+  // transition does: into the ball when it starts and out when it ends, both as fast morphs
+  // whatever the Fast Morph setting. While it lasts the button does nothing.
+  const bool screwMorph = CMorphBall::PortScrewWantsMorph();
+  const bool screwUnmorph = CMorphBall::PortScrewWantsUnmorph();
+  const bool screw = screwMorph || screwUnmorph;
+  if (!screw && (x768_morphball->PortScrewAttackActive() ||
+                 !ControlMapper::GetPressInput(ControlMapper::kC_Morph, input))) {
+    return;
+  }
+  if (screwMorph && x2f8_morphBallState != kMS_Unmorphed) {
+    CMorphBall::PortScrewMorphStarted(false);
+    return;
+  }
+  if (screwUnmorph && x2f8_morphBallState != kMS_Morphed) {
+    CMorphBall::PortScrewUnmorphHandled();
+    return;
+  }
+  const float morphDuration = screw ? kFastMorphDuration : MorphTransitionDuration();
+#else
   if (!ControlMapper::GetPressInput(ControlMapper::kC_Morph, input)) {
     return;
   }
+  const float morphDuration = MorphTransitionDuration();
+#endif
 
   switch (x2f8_morphBallState) {
   case kMS_Unmorphed:
     if (mgr.GetPlayerState()->HasPowerUp(CPlayerState::kIT_MorphBall) == true &&
         CanEnterMorphBallState(mgr, 0.f)) {
       x574_morphTime = 0.f;
-      x578_morphDuration = MorphTransitionDuration();
+      x578_morphDuration = morphDuration;
       TransitionToMorphBallState(dt, mgr);
+#ifdef TARGET_PC
+      if (screwMorph) {
+        CMorphBall::PortScrewMorphStarted(true);
+      }
+    } else if (screwMorph) {
+      CMorphBall::PortScrewMorphStarted(false);
+#endif
     } else {
       DoSfxEffects(CSfxManager::SfxStart(SFXsam_b_malfxn_00, 127, 64, true));
     }
@@ -2654,11 +2684,20 @@ void CPlayer::UpdateMorphBallState(float dt, const CFinalInput& input, CStateMan
     if (CanLeaveMorphBallState(mgr, posDelta)) {
       SetTranslation(GetTranslation() + posDelta);
       x574_morphTime = 0.f;
-      x578_morphDuration = MorphTransitionDuration();
+      x578_morphDuration = morphDuration;
       TransitionFromMorphBallState(dt, mgr);
+#ifdef TARGET_PC
+    } else if (screwUnmorph) {
+      // No room to stand: the screw attack ends as a ball.
+#endif
     } else {
       DoSfxEffects(CSfxManager::SfxStart(SFXsam_b_malfxn_00, 127, 64, true));
     }
+#ifdef TARGET_PC
+    if (screwUnmorph) {
+      CMorphBall::PortScrewUnmorphHandled();
+    }
+#endif
     break;
   }
   case kMS_Unmorphing:

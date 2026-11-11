@@ -188,6 +188,14 @@ void DrawControlsOptions() {
   }
   ItemHelp("Press R once to cling to a Spider Ball track, and again to let go. Leaving the track "
            "lets go by itself. Away from a track, R works as usual.");
+  bool screwAttack = sInput.screwAttack;
+  if (ImGui::Checkbox("Screw Attack (experimental)", &screwAttack)) {
+    SetScrewAttack(screwAttack);
+  }
+  ItemHelp("Metroid Prime 2's Screw Attack. After a Space Jump, press jump a third time while "
+           "moving forward: Samus curls into the ball and can jump up to five more times across "
+           "a gap, pressing jump each time she starts to fall. It ends on landing, on a wall, or "
+           "on a mistimed press. Needs the Space Jump Boots and the Morph Ball.");
   const int springRule = PortAp::SpringBallRule();
   ImGui::BeginDisabled(springRule >= 0);
   bool springBall = sInput.springBall;

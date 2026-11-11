@@ -205,6 +205,26 @@ public:
   void PortResetTimeSinceBombJump() { xPortTimeSinceBombJump = 0.f; }
   // Damage keeps the spider ball off its track for this long (Toggle Spider Ball).
   float PortDamageTimer() const { return x191c_damageTimer; }
+
+  // Screw Attack (PortDebug::ScrewAttack): Metroid Prime 2's, by its rules
+  // (Echoes' CMorphBall::ComputeScrewAttackMovement), on Prime 1's ball. Echoes keeps it in the
+  // ball's state (kBS_ScrewAttack) and the player's (the spawned morph state, a pending
+  // transition); Prime 1 has neither, so one phase held in CMorphBall.cpp stands for both. There
+  // is one player, so it is not a member (and no layout or save state changes).
+  //   request (CPlayer::JumpInput) -> a fast morph (CPlayer::UpdateMorphBallState) -> active once
+  //   the ball is entered (CPlayer::EnterMorphBallState) -> a fast unmorph when it ends.
+  static void PortScrewRequest(const CVector3f& direction, const CVector3f& lastJumpPosition);
+  static void PortScrewReset();
+  // The morph, or the unmorph, the screw attack is waiting for: CPlayer presses the button for it.
+  static bool PortScrewWantsMorph();
+  static bool PortScrewWantsUnmorph();
+  // CPlayer started the morph it wanted, or could not: the request is dropped.
+  static void PortScrewMorphStarted(bool started);
+  static void PortScrewUnmorphHandled();
+  // The morph under way is the screw attack's: entering the ball starts it.
+  static bool PortScrewMorphing();
+  bool PortScrewAttackActive() const;
+  void PortBeginScrewAttack();
 #endif
 
   u32 GetMorphballModelShader() const { return x5c_ballModelShader; } // name?
@@ -324,6 +344,9 @@ private:
   float x1c34_boostLightFactor;
   float x1c38_spiderLightFactor;
 #ifdef TARGET_PC
+  void PortEndScrewAttack();
+  void PortComputeScrewAttack(const CFinalInput& input, CStateManager& mgr, float dt);
+  void PortApplyScrewAttackDamage(CStateManager& mgr, float dt);
   // Remastered binds the swoosh, inner glow and transition flash through particle variables
   // (kb topic/particle-variable-bindings). Handles are looked up once per generator; the water
   // factor (CMorphBallMP1 + 0x22a8) mixes the glow's dry and wet values and drives its light.

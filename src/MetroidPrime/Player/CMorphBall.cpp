@@ -61,6 +61,147 @@ static inline CMaterialFilter MakeBallDamageFilter() {
   return CMaterialFilter::MakeIncludeExclude(CMaterialList(kMT_Solid), CMaterialList());
 }
 
+#ifdef TARGET_PC
+// Screw Attack (CMorphBall.hpp). The numbers are the defaults of Echoes' SLdrTweakBall_ScrewAttack
+// constructor (the decompilation's code, not disc data; the disc's tweak may differ).
+namespace {
+const float kScrewGravity = 40.f;
+const float kScrewInitialDropLimit = 4.5f;
+const float kScrewFinalDropLimit = 4.5f;
+const int kScrewDropLimitJumpCount = 5;
+const int kScrewMaxJumps = 5;
+const float kScrewVerticalJumpVelocity = 20.f;
+const float kScrewHorizontalJumpVelocity = 20.f;
+const float kScrewMaxSteeringAngle = 10.f * (M_PIF / 180.f);
+const float kScrewDamage = 50.f;
+const float kScrewDamageRadius = 2.f;
+
+enum EScrewPhase {
+  kScrewNone,
+  kScrewWantsMorph, // requested in the air; CPlayer starts a fast morph
+  kScrewMorphing,   // the morph is under way
+  kScrewActive,     // in the ball
+  kScrewWantsUnmorph,
+};
+EScrewPhase sScrewPhase = kScrewNone;
+CVector3f sScrewDirection = CVector3f(0.f, 1.f, 0.f);
+// Echoes' mLastSpaceJumpPosition: the drop limit and each jump's height are measured from it.
+CVector3f sScrewLastJumpPosition = CVector3f(0.f, 0.f, 0.f);
+int sScrewJumpCount = 0;
+} // namespace
+
+void CMorphBall::PortScrewRequest(const CVector3f& direction, const CVector3f& lastJumpPosition) {
+  sScrewPhase = kScrewWantsMorph;
+  sScrewDirection = direction;
+  sScrewLastJumpPosition = lastJumpPosition;
+  sScrewJumpCount = 0;
+}
+
+void CMorphBall::PortScrewReset() { sScrewPhase = kScrewNone; }
+bool CMorphBall::PortScrewWantsMorph() { return sScrewPhase == kScrewWantsMorph; }
+bool CMorphBall::PortScrewWantsUnmorph() { return sScrewPhase == kScrewWantsUnmorph; }
+void CMorphBall::PortScrewMorphStarted(bool started) {
+  sScrewPhase = started ? kScrewMorphing : kScrewNone;
+}
+void CMorphBall::PortScrewUnmorphHandled() { sScrewPhase = kScrewNone; }
+bool CMorphBall::PortScrewMorphing() { return sScrewPhase == kScrewMorphing; }
+bool CMorphBall::PortScrewAttackActive() const { return sScrewPhase == kScrewActive; }
+
+void CMorphBall::PortBeginScrewAttack() {
+  sScrewPhase = kScrewActive;
+  sScrewJumpCount = 0;
+  CancelBoosting();
+  LeaveBoosting();
+  x1c_controlForce = CVector3f::Zero();
+  x10_boostControlForce = CVector3f::Zero();
+}
+
+// Echoes goes to kBS_ScrewAttackRecovery, plays Samus out of the spin and then unmorphs; without
+// her animations the ball unmorphs at once (CPlayer::UpdateMorphBallState; it stays a ball where
+// she cannot stand).
+void CMorphBall::PortEndScrewAttack() {
+  if (sScrewPhase == kScrewActive) {
+    sScrewPhase = kScrewWantsUnmorph;
+  }
+}
+
+// Echoes' CMorphBall::ApplyScrewAttackDamage: the tweak's damage, a second's worth over 60 ticks,
+// to everything whose touch bounds reach the ball's damage radius.
+void CMorphBall::PortApplyScrewAttackDamage(CStateManager& mgr, float dt) {
+  const CDamageInfo damage(CWeaponMode::BoostBall(), 60.f * dt * kScrewDamage, 0.f, 0.f);
+  const CVector3f ballPos = GetBallToWorld().GetTranslation();
+  const CVector3f reach(kScrewDamageRadius, kScrewDamageRadius, kScrewDamageRadius);
+  TEntityList nearList;
+  mgr.BuildNearList(nearList, CAABox(ballPos - reach, ballPos + reach),
+                    CMaterialFilter::MakeIncludeExclude(CMaterialList(kMT_Solid, kMT_Character),
+                                                        CMaterialList(kMT_Player)),
+                    &x0_player);
+  const TUniqueId playerId = x0_player.GetUniqueId();
+  for (AUTO(it, nearList.begin()); it != nearList.end(); ++it) {
+    const CActor* actor = TCastToConstPtr< CActor >(mgr.GetObjectById(*it));
+    if (actor == nullptr) {
+      continue;
+    }
+    const rstl::optional_object< CAABox > bounds = actor->GetTouchBounds();
+    if (bounds) {
+      // Sphere against box: the box's point nearest the ball's centre.
+      const CVector3f& lo = bounds->GetMinPoint();
+      const CVector3f& hi = bounds->GetMaxPoint();
+      const CVector3f nearest(CMath::Clamp(lo.GetX(), ballPos.GetX(), hi.GetX()),
+                              CMath::Clamp(lo.GetY(), ballPos.GetY(), hi.GetY()),
+                              CMath::Clamp(lo.GetZ(), ballPos.GetZ(), hi.GetZ()));
+      if ((nearest - ballPos).MagSquared() > kScrewDamageRadius * kScrewDamageRadius) {
+        continue;
+      }
+    }
+    mgr.ApplyDamage(playerId, *it, playerId, damage, MakeBallDamageFilter(), CVector3f::Zero());
+  }
+}
+
+// Echoes' CMorphBall::ComputeScrewAttackMovement, without its wall jump (kBS_ScrewAttackWallJump),
+// body animation commands, jump flash and sounds. A jump press while falling, within the drop
+// limit of the last Space Jump's height, jumps again, up to kScrewMaxJumps times: the jump speed
+// makes up for the height lost, so every jump peaks at the same height. A press at any other time
+// ends the attack, as does falling past the drop limit.
+void CMorphBall::PortComputeScrewAttack(const CFinalInput& input, CStateManager& mgr, float dt) {
+  const float dropLimit =
+      kScrewInitialDropLimit + (static_cast< float >(sScrewJumpCount) /
+                                static_cast< float >(kScrewDropLimitJumpCount)) *
+                                   (kScrewFinalDropLimit - kScrewInitialDropLimit);
+  const float drop = x0_player.GetTranslation().GetZ() - sScrewLastJumpPosition.GetZ();
+  bool end = drop < 0.f && CMath::AbsF(drop) > dropLimit;
+  if (x0_player.CheckSubmerged()) {
+    end = true;
+  }
+
+  if (ControlMapper::GetPressInput(ControlMapper::kC_JumpOrBoost, input) && !end &&
+      sScrewJumpCount < kScrewMaxJumps) {
+    if (CMath::AbsF(drop) < dropLimit && x0_player.GetVelocityWR().GetZ() < 0.f) {
+      // Echoes: jump energy plus the potential energy lost since the last Space Jump.
+      const float speedSquared = kScrewVerticalJumpVelocity * kScrewVerticalJumpVelocity +
+                                 2.f * drop * -kScrewGravity;
+      const float jumpSpeed = CMath::SqrtF(rstl::max_val(0.f, speedSquared));
+      const float steering = BallTurnInput(input);
+      if (CMath::AbsF(steering) > 0.05f) {
+        sScrewDirection = CTransform4f::RotateZ(CRelAngle(kScrewMaxSteeringAngle * steering))
+                              .Rotate(sScrewDirection);
+      }
+      x0_player.SetVelocityWR(kScrewHorizontalJumpVelocity * sScrewDirection +
+                              CVector3f(0.f, 0.f, jumpSpeed));
+      ++sScrewJumpCount;
+    } else {
+      end = true;
+    }
+  }
+
+  if (end) {
+    PortEndScrewAttack();
+  } else {
+    PortApplyScrewAttackDamage(mgr, dt);
+  }
+}
+#endif
+
 // The Boost Ball duration cheat (PortDebug::BoostDurationScale) stretches the boosted window.
 static inline float BoostDrainTime() {
   return gpTweakBall->GetBoostBallDrainTime() * PortDebug::BoostDurationScale();
@@ -532,6 +673,11 @@ void CMorphBall::ComputeBallMovement(const CFinalInput& input, CStateManager& mg
     x0_player.SetMoveState(NPlayer::kMS_FallingMorphed, mgr);
     sSpringBallCooldown = 40.f / 60.f;
     PortDebug::ClearSpringBallFlick();
+  }
+  // Screw Attack owns the ball while it lasts: no boost, no stick control, no spider ball.
+  if (PortScrewAttackActive()) {
+    PortComputeScrewAttack(input, mgr, dt);
+    return;
   }
 #endif
   ComputeBoostBallMovement(input, mgr, dt);
@@ -1495,6 +1641,10 @@ void CMorphBall::EnterMorphBallState(CStateManager& mgr) {
 
 void CMorphBall::LeaveMorphBallState(CStateManager&) {
 #ifdef TARGET_PC
+  // However the ball is left, a screw attack does not outlive it.
+  if (sScrewPhase == kScrewActive || sScrewPhase == kScrewWantsUnmorph) {
+    sScrewPhase = kScrewNone;
+  }
   sSpringBallCooldown = 0.f;
 #endif
   LeaveBoosting();
@@ -2500,6 +2650,11 @@ static inline float ClampClimbSpeedMin(float speed, float minimum) {
 void CMorphBall::CollidedWith(const TUniqueId& id, const CCollisionInfoList& list,
                               CStateManager& mgr) {
   x74_collisionInfos = list;
+#ifdef TARGET_PC
+  // Echoes ends the attack on any contact but a wall-jump surface (and recoils off a wall); there
+  // is no wall jump here, so every contact ends it.
+  PortEndScrewAttack();
+#endif
 
   const CMaterialList allMats = GetCollisionMaterials(list);
   int wakeMaterial;
@@ -2767,6 +2922,13 @@ void CMorphBall::ApplyGravity(CStateManager& mgr) {
     }
   }
 
+#ifdef TARGET_PC
+  // Echoes' GetGravityAcceleration: the screw attack falls by its own, lighter gravity.
+  if (PortScrewAttackActive()) {
+    x0_player.SetMomentumWR(CVector3f(0.f, 0.f, x0_player.GetMass() * -kScrewGravity));
+    return;
+  }
+#endif
   x0_player.SetMomentumWR(CVector3f(0.f, 0.f, x0_player.GetMass() * gpTweakBall->GetBallGravity()));
 }
 

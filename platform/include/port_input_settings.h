@@ -68,6 +68,7 @@ struct Settings {
   bool scanShoot = false;
   bool grappleToggle = false;
   bool spiderToggle = false;
+  bool screwAttack = false;
   bool aimLockOn = false;
   bool stickyCharge = false;
   bool rapidCharge = false;

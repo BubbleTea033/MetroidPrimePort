@@ -878,10 +878,31 @@ float CPlayer::TurnInput(const CFinalInput& input) const {
   return CMath::Limit(turn, 1.f);
 }
 
+#ifdef TARGET_PC
+// Screw Attack (CMorphBall.hpp): Echoes' mJumpPresses, the jump presses since the ground was
+// left, and its mLastSpaceJumpPosition.
+static int sScrewJumpPresses = 0;
+static CVector3f sScrewLastJumpPosition = CVector3f(0.f, 0.f, 0.f);
+#endif
+
 float CPlayer::JumpInput(const CFinalInput& input, CStateManager& mgr) {
   if (IsMorphBallTransitioning()) {
     return GetGravity() * GetMass();
   }
+#ifdef TARGET_PC
+  if (x258_movementState == NPlayer::kMS_OnGround) {
+    sScrewJumpPresses = 0;
+    // A request the morph never took up does not wait for the next jump.
+    if (CMorphBall::PortScrewWantsMorph() || CMorphBall::PortScrewMorphing()) {
+      CMorphBall::PortScrewReset();
+    }
+  }
+  const int screwPriorPresses = sScrewJumpPresses;
+  const bool screwJumpPress = ControlMapper::GetPressInput(ControlMapper::kC_JumpOrBoost, input);
+  if (screwJumpPress) {
+    ++sScrewJumpPresses;
+  }
+#endif
   float jumpFactor = 1.f;
   if (!mgr.GetPlayerState()->HasPowerUp(CPlayerState::kIT_GravitySuit)) {
     switch (GetSurfaceRestraint()) {
@@ -917,6 +938,9 @@ float CPlayer::JumpInput(const CFinalInput& input, CStateManager& mgr) {
             x28c_sjTimer &&
         0.f < x28c_sjTimer && ControlMapper::GetPressInput(ControlMapper::kC_JumpOrBoost, input)) {
       SetMoveState(NPlayer::kMS_Jump, mgr);
+#ifdef TARGET_PC
+      sScrewLastJumpPosition = GetTranslation();
+#endif
       x384_dashTimer = 0.f;
       x380_strafeInputAtDash = StrafeInput(input);
       if (gpTweakPlayer->GetImpulseDoubleJump()) {
@@ -932,6 +956,32 @@ float CPlayer::JumpInput(const CFinalInput& input, CStateManager& mgr) {
                             forward * (verticalDoubleJumpAccel - horizontalDoubleJumpAccel)) *
                            GetMass());
     }
+#ifdef TARGET_PC
+    // Screw Attack, as Echoes starts it: the third jump press in the air, out of water, while
+    // moving the way Samus faces. The press jumps as a Space Jump's impulse does and asks for
+    // the morph (CPlayer::UpdateMorphBallState).
+    if (screwJumpPress && screwPriorPresses == 2 && PortDebug::ScrewAttack() &&
+        mgr.GetPlayerState()->HasPowerUp(CPlayerState::kIT_SpaceJumpBoots) &&
+        mgr.GetPlayerState()->HasPowerUp(CPlayerState::kIT_MorphBall) && !IsInFluid() &&
+        CanEnterMorphBallState(mgr, 0.f)) {
+      CVector3f flatVelocity = GetVelocityWR();
+      flatVelocity.SetZ(0.f);
+      if (flatVelocity.CanBeNormalized()) {
+        flatVelocity.Normalize();
+        CVector3f facing = GetTransform().GetColumn(kDY);
+        facing.SetZ(0.f);
+        if (facing.CanBeNormalized() &&
+            CVector3f::Dot(flatVelocity, facing.AsNormalized()) > 0.95f) {
+          if (gpTweakPlayer->GetImpulseDoubleJump()) {
+            const CVector3f impulse(0.f, 0.f,
+                                    (doubleJumpImpulse - GetVelocityWR().GetZ()) * GetMass());
+            ApplyImpulseWR(impulse, CAxisAngle::Identity());
+          }
+          CMorphBall::PortScrewRequest(flatVelocity, sScrewLastJumpPosition);
+        }
+      }
+    }
+#endif
     return GetGravity() * GetMass();
   }
   if (ControlMapper::GetDigitalInput(ControlMapper::kC_JumpOrBoost, input) ||
@@ -941,6 +991,7 @@ float CPlayer::JumpInput(const CFinalInput& input, CStateManager& mgr) {
       if (ControlMapper::GetPressInput(ControlMapper::kC_JumpOrBoost, input)) {
         SetMoveState(NPlayer::kMS_Jump, mgr);
 #ifdef TARGET_PC
+        sScrewLastJumpPosition = GetTranslation();
         if (RemasteredJump(*this, mgr)) {
           const CVector3f impulse(0.f, 0.f, -GetVelocityWR().GetZ() * GetMass());
           ApplyImpulseWR(impulse, CAxisAngle::Identity());
@@ -2044,6 +2095,11 @@ void CPlayer::EnterMorphBallState(CStateManager& mgr) {
   SetAngularVelocityOR(CAxisAngle::FromVector(CVector3f(
       -GetVelocityWR().Magnitude() / gpTweakPlayer->GetPlayerBallHalfExtent(), 0.f, 0.f)));
   x768_morphball->EnterMorphBallState(mgr);
+#ifdef TARGET_PC
+  if (CMorphBall::PortScrewMorphing()) {
+    x768_morphball->PortBeginScrewAttack();
+  }
+#endif
   x768_morphball->TakeDamage(-1.f);
   x768_morphball->SetDamageTimer(0.f);
   mgr.PlayerState()->StartTransitionToVisor(CPlayerState::kPV_Combat);

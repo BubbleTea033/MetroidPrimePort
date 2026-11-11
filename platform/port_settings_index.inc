@@ -59,6 +59,7 @@
 {"Controls", "Options", "Aiming", "Reset aim resets pointer and camera", "reset aim recentre center crosshair pointer camera level pitch"},
 {"Controls", "Options", "Morph ball", "Fast Morph", "morph ball speed quick transform"},
 {"Controls", "Options", "Morph ball", "Toggle Spider Ball", "spider ball track attach toggle hold"},
+{"Controls", "Options", "Morph ball", "Screw Attack (experimental)", "screw attack prime 2 echoes jump gap space jump ability"},
 {"Controls", "Options", "Morph ball", "Spring Ball (C-stick up)", "spring ball jump c-stick"},
 {"Controls", "Options", "Rumble", "Rumble", "vibration vibrate force feedback controller shake"},
 {"Controls", "Options", "Map", "Invert map rotate X", "map rotate turn invert flip reverse horizontal"},
