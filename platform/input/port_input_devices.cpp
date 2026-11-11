@@ -12,6 +12,7 @@
 #include "port_pointer.h"
 #include "port_radial.h"
 #include "MetroidPrime/CStateManager.hpp"
+#include "MetroidPrime/Player/CMorphBall.hpp"
 #include "MetroidPrime/Player/CPlayer.hpp"
 #include "MetroidPrime/Player/CPlayerGun.hpp"
 #include "MetroidPrime/Player/CPlayerState.hpp"
@@ -574,7 +575,11 @@ uint16_t GameContexts() {
   if (PortDebug::MapScreenOpen()) return PortInput::kCtxMap;
   if (const CPlayer* player = mgr->GetPlayer()) {
     const CPlayer::EPlayerMorphBallState morph = player->GetMorphballTransitionState();
-    if (morph == CPlayer::kMS_Morphed || morph == CPlayer::kMS_Morphing) return PortInput::kCtxMorphBall;
+    // A screw attack is a jump in the ball: its jumps are the jump binding's (CMorphBall.hpp).
+    if ((morph == CPlayer::kMS_Morphed || morph == CPlayer::kMS_Morphing) &&
+        !CMorphBall::PortScrewInProgress()) {
+      return PortInput::kCtxMorphBall;
+    }
   }
   uint16_t contexts = PortInput::kCtxGameplay;
   if (const CPlayer* player = mgr->GetPlayer();

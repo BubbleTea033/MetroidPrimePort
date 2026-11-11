@@ -223,6 +223,10 @@ public:
   static void PortScrewUnmorphHandled();
   // The morph under way is the screw attack's: entering the ball starts it.
   static bool PortScrewMorphing();
+  // From the morph the screw attack asked for until it ends: Samus is mid-jump, not rolling, so
+  // the input engine keeps the Gameplay context (port_input_devices.cpp GameContexts) and the
+  // jump binding keeps pressing jump, which a Morph Ball row for Boost would otherwise take.
+  static bool PortScrewInProgress();
   bool PortScrewAttackActive() const;
   void PortBeginScrewAttack();
 #endif

@@ -105,6 +105,10 @@ void CMorphBall::PortScrewMorphStarted(bool started) {
 }
 void CMorphBall::PortScrewUnmorphHandled() { sScrewPhase = kScrewNone; }
 bool CMorphBall::PortScrewMorphing() { return sScrewPhase == kScrewMorphing; }
+bool CMorphBall::PortScrewInProgress() {
+  return sScrewPhase == kScrewWantsMorph || sScrewPhase == kScrewMorphing ||
+         sScrewPhase == kScrewActive;
+}
 bool CMorphBall::PortScrewAttackActive() const { return sScrewPhase == kScrewActive; }
 
 void CMorphBall::PortBeginScrewAttack() {
