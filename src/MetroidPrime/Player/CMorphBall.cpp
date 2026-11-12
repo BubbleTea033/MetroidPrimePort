@@ -62,8 +62,9 @@ static inline CMaterialFilter MakeBallDamageFilter() {
 }
 
 #ifdef TARGET_PC
-// Screw Attack (CMorphBall.hpp). The numbers are the defaults of Echoes' SLdrTweakBall_ScrewAttack
-// constructor (the decompilation's code, not disc data; the disc's tweak may differ).
+// Screw Attack (CMorphBall.hpp). The numbers are Echoes' tweak as the USA disc (G2ME01) has it,
+// read in the Echoes port; they match its SLdrTweakBall_ScrewAttack defaults but for the steering
+// angle and the damage.
 namespace {
 const float kScrewGravity = 40.f;
 const float kScrewInitialDropLimit = 4.5f;
@@ -72,8 +73,8 @@ const int kScrewDropLimitJumpCount = 5;
 const int kScrewMaxJumps = 5;
 const float kScrewVerticalJumpVelocity = 20.f;
 const float kScrewHorizontalJumpVelocity = 20.f;
-const float kScrewMaxSteeringAngle = 10.f * (M_PIF / 180.f);
-const float kScrewDamage = 50.f;
+const float kScrewMaxSteeringAngle = 3.f * (M_PIF / 180.f);
+const float kScrewDamage = 36.f;
 const float kScrewDamageRadius = 2.f;
 // Echoes' UpdateScrewAttackRecovery: the recoil off a wall.
 const float kScrewRecoilAway = 12.f;
