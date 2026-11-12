@@ -1624,6 +1624,10 @@ if(MP_BUILD_TESTS)
             platform/port_dread_bcmdl.cpp
         INCLUDES platform/include
         LIBRARIES ZLIB::ZLIB)
+    # The Echoes animation inspection's byte-pattern readers (--inspect-echoes-anims).
+    mp_port_test(port_anim_inspect_tests
+        SOURCES tests/port_anim_inspect.cpp
+        INCLUDES platform/include)
     # Every port_settings.ini key reads back as written (platform/debug_ui/settings.cpp,
     # kSettingKeys); the game binary checks itself and exits before starting.
     add_test(NAME port_settings_roundtrip COMMAND metroid_prime_port --settings-selftest)

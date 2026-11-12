@@ -5,6 +5,7 @@
 
 #include "port_remastered_import_internal.h"
 
+#include "port_anim_inspect.h"
 #include "port_echoes_suits.h"
 #include "port_utf8_path.h"
 
@@ -107,6 +108,17 @@ public:
       return false;
     }
     return true;
+  }
+
+  bool Has(uint32_t type, uint32_t id) const { return m_resources.count(Key(type, id)) != 0; }
+
+  // The ids of every resource of `type`, in id order.
+  std::vector<uint32_t> Ids(uint32_t type) const {
+    std::vector<uint32_t> ids;
+    for (auto it = m_resources.lower_bound(Key(type, 0)); it != m_resources.end() && (it->first >> 32) == type; ++it) {
+      ids.push_back(uint32_t(it->first));
+    }
+    return ids;
   }
 
   bool Read(uint32_t type, uint32_t id, std::vector<uint8_t>& out) {
@@ -307,6 +319,127 @@ bool StartEchoesSuitsImport(const std::string& imagePath) {
   sState.message = "Starting";
   sThread = std::thread(RunEchoes, imagePath, FromUtf8(mods));
   return true;
+}
+
+// `--inspect-echoes-anims`: what the Screw Attack's animation import needs to know, written to
+// echoes_anims_report.txt in the working folder (port_anim_inspect.h): Echoes Samus's animation
+// sets (those naming her in-game or cutscene skeleton) with their characters and animations, the
+// headers of every animation named for the Screw Attack, Prime's in-game Samus animation set, and
+// both in-game skeletons' joints side by side.
+int RunEchoesAnimInspectFromCommandLine(const std::string& imagePath) {
+  using namespace PortAnimInspect;
+  constexpr uint32_t kAncs = 0x414E4353;
+  constexpr uint32_t kEchoesGameCinf = 0xF86193FE;  // port_echoes_suits.h kTargets "game20"
+  constexpr uint32_t kEchoesCineCinf = 0xA27AFE83;
+  constexpr uint32_t kPrimeGameCinf = 0xA496DA02;   // BallTransitionsANCS
+  std::string error;
+  EchoesDisc echoes;
+  if (!echoes.Open(imagePath, error)) {
+    std::fprintf(stderr, "%s\n", error.c_str());
+    return 1;
+  }
+  Retail retail;
+  if (!retail.Index(error)) {
+    std::fprintf(stderr, "%s\n", error.c_str());
+    return 1;
+  }
+  const Known echoesKnown = [&echoes](uint32_t type, uint32_t id) { return echoes.Has(type, id); };
+  const Known primeKnown = [&retail](uint32_t type, uint32_t id) { return retail.HasResource(type, id); };
+  std::string body;
+  std::string summary;
+  char line[512];
+  const auto add = [&line](std::string& to) { to += line; to += '\n'; };
+
+  const auto listSet = [&](const char* game, uint32_t id, const std::vector<uint8_t>& ancs, const Known& known,
+                           bool isEchoes) {
+    std::snprintf(line, sizeof(line), "%s ANCS %08X, %zu bytes", game, id, ancs.size());
+    add(body);
+    for (const Character& c : FindCharacters(ancs.data(), ancs.size(), known)) {
+      std::snprintf(line, sizeof(line), "  character '%s': CMDL %08X CSKR %08X CINF %08X", c.name.c_str(), c.cmdl,
+                    c.cskr, c.cinf);
+      add(body);
+    }
+    for (const Play& p : FindPlays(ancs.data(), ancs.size(), known)) {
+      std::snprintf(line, sizeof(line), "  ANIM %08X  entry '%s'  primitive '%s' #%u", p.anim, p.entry.c_str(),
+                    p.primitive.c_str(), p.primitiveIndex);
+      add(body);
+      if (isEchoes && (ContainsNoCase(p.entry, "screw") || ContainsNoCase(p.primitive, "screw"))) {
+        std::vector<uint8_t> anim;
+        const std::string header =
+            echoes.Read(kANIM, p.anim, anim) ? DescribeAnim(anim.data(), anim.size(), true) : "unreadable";
+        std::snprintf(line, sizeof(line), "ANCS %08X ANIM %08X '%s' / '%s': %s", id, p.anim, p.entry.c_str(),
+                      p.primitive.c_str(), header.c_str());
+        add(summary);
+      }
+    }
+  };
+
+  size_t echoesSets = 0;
+  for (const uint32_t id : echoes.Ids(kAncs)) {
+    std::vector<uint8_t> ancs;
+    if (!echoes.Read(kAncs, id, ancs) || (!Mentions(ancs.data(), ancs.size(), kEchoesGameCinf) &&
+                                          !Mentions(ancs.data(), ancs.size(), kEchoesCineCinf))) {
+      continue;
+    }
+    ++echoesSets;
+    listSet("Echoes", id, ancs, echoesKnown, true);
+  }
+  size_t primeSets = 0;
+  for (const uint32_t id : retail.Ids(kAncs)) {
+    std::vector<uint8_t> ancs;
+    if (!retail.Read(kAncs, id, ancs) || !Mentions(ancs.data(), ancs.size(), kPrimeGameCinf)) {
+      continue;
+    }
+    ++primeSets;
+    listSet("Prime", id, ancs, primeKnown, false);
+  }
+
+  // The two in-game skeletons, Echoes' joints matched to Prime's by name.
+  std::vector<uint8_t> data;
+  std::vector<PortEchoesSuits::EchoesJoint> echoesJoints;
+  PortDread::PrimeSkeleton primeSkeleton;
+  std::string why;
+  if (echoes.Read(kCINF, kEchoesGameCinf, data) &&
+      PortEchoesSuits::ParseCinf(data.data(), data.size(), echoesJoints, &why) &&
+      retail.Read(kCINF, kPrimeGameCinf, data) && PortDread::ParseCinf(data.data(), data.size(), primeSkeleton, &why)) {
+    std::snprintf(line, sizeof(line), "Echoes skeleton %08X, %zu joints (id parent name -> Prime id):",
+                  kEchoesGameCinf, echoesJoints.size());
+    add(body);
+    size_t matched = 0;
+    for (const auto& joint : echoesJoints) {
+      const int index = primeSkeleton.Find(joint.name);
+      matched += index >= 0;
+      std::snprintf(line, sizeof(line), "  %3u %3u %-24s -> %s", joint.id, joint.parent, joint.name.c_str(),
+                    index >= 0 ? std::to_string(primeSkeleton.joints[size_t(index)].id).c_str() : "-");
+      add(body);
+    }
+    std::snprintf(line, sizeof(line), "Prime skeleton %08X, %zu joints (id parent name):", kPrimeGameCinf,
+                  primeSkeleton.joints.size());
+    add(body);
+    for (const auto& joint : primeSkeleton.joints) {
+      std::snprintf(line, sizeof(line), "  %3u %3u %s", joint.id, joint.parent, joint.name.c_str());
+      add(body);
+    }
+    std::snprintf(line, sizeof(line), "Skeletons: %zu of Echoes' %zu joints have a Prime namesake (Prime has %zu)",
+                  matched, echoesJoints.size(), primeSkeleton.joints.size());
+    add(summary);
+  } else {
+    std::snprintf(line, sizeof(line), "Skeletons unreadable: %s", why.c_str());
+    add(summary);
+  }
+
+  std::string report = "Echoes animation inspection (" + imagePath + ")\n";
+  std::snprintf(line, sizeof(line), "%zu Echoes and %zu Prime Samus animation sets", echoesSets, primeSets);
+  add(report);
+  report += "== Summary ==\n" + summary + "\n== Detail ==\n" + body;
+  const fs::path out = fs::current_path() / "echoes_anims_report.txt";
+  if (!WriteFile(out, std::vector<uint8_t>(report.begin(), report.end()))) {
+    std::fprintf(stderr, "cannot write %s\n", ToUtf8(out).c_str());
+    return 1;
+  }
+  std::printf("%s== Summary ==\n%s\nwritten to %s\n", report.substr(0, report.find("== Summary ==")).c_str(),
+              summary.c_str(), ToUtf8(out).c_str());
+  return 0;
 }
 
 int RunEchoesSuitsImportFromCommandLine(const std::string& imagePath) {

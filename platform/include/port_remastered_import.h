@@ -859,5 +859,8 @@ int RunDreadSamusImportFromCommandLine(const std::string& nspPath, const std::st
 bool StartEchoesSuitsImport(const std::string& imagePath);
 // `--import-echoes-suits <image>`, as RunImportFromCommandLine. Returns the exit code.
 int RunEchoesSuitsImportFromCommandLine(const std::string& imagePath);
+// `--inspect-echoes-anims <image>`: a report on Echoes Samus's animations for the Screw Attack's
+// animation import (echoes_anims_report.txt in the working folder). Returns the exit code.
+int RunEchoesAnimInspectFromCommandLine(const std::string& imagePath);
 
 }  // namespace PortRemastered

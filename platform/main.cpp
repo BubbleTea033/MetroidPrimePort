@@ -919,6 +919,23 @@ int main(int argc, char** argv) {
         aurora_dvd_close();
         return result;
     }
+    // --inspect-echoes-anims <image>: a report on Echoes Samus's animations, for the Screw Attack's
+    // animation import (port_anim_inspect.h). Needs the Prime disc too, as --import-echoes-suits.
+    if (argc >= 2 && std::strcmp(argv[1], "--inspect-echoes-anims") == 0) {
+        if (argc != 3) {
+            std::fprintf(stderr, "usage: %s %s <Echoes disc image>\n", argv[0], argv[1]);
+            return 2;
+        }
+        PortDebug::LoadDiscPath();
+        const char* disc = ResolveDiscPath(1, argv);
+        if (disc == nullptr || !OpenDiscImage(disc)) {
+            std::fprintf(stderr, "cannot open the Metroid Prime disc image; set MP_DISC\n");
+            return 1;
+        }
+        const int result = PortRemastered::RunEchoesAnimInspectFromCommandLine(argv[2]);
+        aurora_dvd_close();
+        return result;
+    }
     // --import-pal-languages <image>: add a PAL disc's languages to a USA game
     // (port_pal_languages.h), without starting it.
     if (argc >= 2 && std::strcmp(argv[1], "--import-pal-languages") == 0) {
