@@ -94,8 +94,8 @@ CVector3f sScrewDirection = CVector3f(0.f, 1.f, 0.f);
 // Echoes' mLastSpaceJumpPosition: the drop limit and each jump's height are measured from it.
 CVector3f sScrewLastJumpPosition = CVector3f(0.f, 0.f, 0.f);
 int sScrewJumpCount = 0;
-// The velocity the attack left the ball with last tick: a terrain hit Prime 1 does not report to
-// CollidedWith shows as the move taking most of it away.
+// The velocity the attack left the ball with last tick: CollidedWith turns a contact's normal to
+// face against it, away from the surface.
 CVector3f sScrewPrevVelocity = CVector3f(0.f, 0.f, 0.f);
 float sScrewRecoverTime = 0.f;
 } // namespace
@@ -201,23 +201,6 @@ void CMorphBall::PortApplyScrewAttackDamage(CStateManager& mgr, float dt) {
 // makes up for the height lost, so every jump peaks at the same height. A press at any other time
 // ends the attack, as does falling past the drop limit.
 void CMorphBall::PortComputeScrewAttack(const CFinalInput& input, CStateManager& mgr, float dt) {
-  // A hit last tick's move made and CollidedWith did not hear about.
-  {
-    const CVector3f velocity = x0_player.GetVelocityWR();
-    const CVector3f prevFlat(sScrewPrevVelocity.GetX(), sScrewPrevVelocity.GetY(), 0.f);
-    const float prevSpeed = prevFlat.Magnitude();
-    if (prevSpeed > 5.f &&
-        CVector3f::Dot(CVector3f(velocity.GetX(), velocity.GetY(), 0.f), prevFlat) <
-            0.5f * prevSpeed * prevSpeed) {
-      PortScrewHit(-prevFlat / prevSpeed);
-      return;
-    }
-    if (sScrewPrevVelocity.GetZ() > 1.f && velocity.GetZ() <= 0.5f &&
-        velocity.GetZ() < sScrewPrevVelocity.GetZ() - 3.f * kScrewGravity * dt) {
-      PortScrewHit(CVector3f(0.f, 0.f, -1.f));
-      return;
-    }
-  }
   const float dropLimit =
       kScrewInitialDropLimit + (static_cast< float >(sScrewJumpCount) /
                                 static_cast< float >(kScrewDropLimitJumpCount)) *

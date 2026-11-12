@@ -438,9 +438,7 @@
   right. A press at any other time, falling past the limit, water, or touching anything ends
   it: a wall recoils the ball (12 away, 24 up, as Echoes' recovery does), a ceiling stops its
   climb, and Samus fast-unmorphs as soon as she has room, tried for 1.5 s in the air (she stays a
-  ball where she cannot stand once landed). Bombs can't be laid during it. Prime 1 doesn't report
-  every terrain hit to the ball, so a hit is also read from the move taking most of the ball's
-  speed (CMorphBall::PortComputeScrewAttack). The ball damages what
+  ball where she cannot stand once landed). Bombs can't be laid during it. The ball damages what
   its 2-unit radius touches (36 a second) (Boost Ball damage type). Needs the Space Jump Boots and the Morph
   Ball. The rules are Echoes' `CMorphBall::ComputeScrewAttackMovement` and the numbers its tweak
   on the USA disc (gravity 40, jumps 20/20, drop limit 4.5, steering 3 degrees, damage 36),
