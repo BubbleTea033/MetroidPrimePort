@@ -879,6 +879,9 @@ float CPlayer::TurnInput(const CFinalInput& input) const {
 }
 
 #ifdef TARGET_PC
+#include "port_screw_diag.h"
+#endif
+#ifdef TARGET_PC
 // Screw Attack (CMorphBall.hpp): Echoes' mJumpPresses, the jump presses since the ground was
 // left, and its mLastSpaceJumpPosition.
 static int sScrewJumpPresses = 0;
@@ -978,6 +981,8 @@ float CPlayer::JumpInput(const CFinalInput& input, CStateManager& mgr) {
             ApplyImpulseWR(impulse, CAxisAngle::Identity());
           }
           CMorphBall::PortScrewRequest(flatVelocity, sScrewLastJumpPosition);
+          PortScrewDiag::Trigger(GetTranslation().GetX(), GetTranslation().GetY(),
+                                 GetTranslation().GetZ());
         }
       }
     }

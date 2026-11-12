@@ -56,6 +56,9 @@
 #include "MetroidPrime/Tweaks/CTweakPlayer.hpp"
 
 #include "rstl/math.hpp"
+#ifdef TARGET_PC
+#include "port_screw_diag.h"
+#endif
 
 static inline CMaterialFilter MakeBallDamageFilter() {
   return CMaterialFilter::MakeIncludeExclude(CMaterialList(kMT_Solid), CMaterialList());
@@ -139,6 +142,8 @@ void CMorphBall::PortEndScrewAttack() {
   if (sScrewPhase == kScrewActive) {
     sScrewPhase = kScrewWantsUnmorph;
     sScrewRecoverTime = 0.f;
+    const CVector3f& at = x0_player.GetTranslation();
+    PortScrewDiag::End(at.GetX(), at.GetY(), at.GetZ());
   }
 }
 
@@ -207,6 +212,7 @@ void CMorphBall::PortComputeScrewAttack(const CFinalInput& input, CStateManager&
                                    (kScrewFinalDropLimit - kScrewInitialDropLimit);
   const float drop = x0_player.GetTranslation().GetZ() - sScrewLastJumpPosition.GetZ();
   bool end = drop < 0.f && CMath::AbsF(drop) > dropLimit;
+  PortScrewDiag::Track(x0_player.GetTranslation().GetZ());
   if (x0_player.CheckSubmerged()) {
     end = true;
   }
@@ -226,6 +232,8 @@ void CMorphBall::PortComputeScrewAttack(const CFinalInput& input, CStateManager&
       x0_player.SetVelocityWR(kScrewHorizontalJumpVelocity * sScrewDirection +
                               CVector3f(0.f, 0.f, jumpSpeed));
       ++sScrewJumpCount;
+      const CVector3f& at = x0_player.GetTranslation();
+      PortScrewDiag::Jump(at.GetX(), at.GetY(), at.GetZ());
     } else {
       end = true;
     }

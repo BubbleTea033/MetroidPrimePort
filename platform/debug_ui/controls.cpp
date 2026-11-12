@@ -13,6 +13,7 @@
 #include "port_input_remap_ui.h"
 #include <dolphin/pad.h>
 #include "port_mouse.h"
+#include "port_screw_diag.h"
 
 #include "MetroidPrime/Player/CGameOptions.hpp"
 #include "MetroidPrime/Player/CGameState.hpp"
@@ -196,6 +197,10 @@ void DrawControlsOptions() {
            "moving forward: Samus curls into the ball and can jump up to five more times across "
            "a gap, pressing jump each time she starts to fall. It ends on landing, on a wall, or "
            "on a mistimed press. Needs the Space Jump Boots and the Morph Ball.");
+  if (screwAttack) {
+    // Diagnostic: the last attack's distances, to compare with Echoes'.
+    ImGui::TextDisabled("%s", PortScrewDiag::Summary().c_str());
+  }
   const int springRule = PortAp::SpringBallRule();
   ImGui::BeginDisabled(springRule >= 0);
   bool springBall = sInput.springBall;
