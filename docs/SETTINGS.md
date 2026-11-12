@@ -436,7 +436,11 @@
   falling within 4.5 units of the Space Jump's height jumps again (20 forward, and a vertical
   speed that brings every jump to the same peak), steered up to 10 degrees a jump by left and
   right. A press at any other time, falling past the limit, water, or touching anything ends
-  it, and Samus fast-unmorphs (she stays a ball where she cannot stand). The ball damages what
+  it: a wall recoils the ball (12 away, 24 up, as Echoes' recovery does), a ceiling stops its
+  climb, and Samus fast-unmorphs as soon as she has room, tried for 1.5 s in the air (she stays a
+  ball where she cannot stand once landed). Bombs can't be laid during it. Prime 1 doesn't report
+  every terrain hit to the ball, so a hit is also read from the move taking most of the ball's
+  speed (CMorphBall::PortComputeScrewAttack). The ball damages what
   its 2-unit radius touches (Boost Ball damage type). Needs the Space Jump Boots and the Morph
   Ball. The rules are Echoes' `CMorphBall::ComputeScrewAttackMovement` and the numbers the
   defaults of its `SLdrTweakBall_ScrewAttack` (the decompilation's code; the Echoes disc's

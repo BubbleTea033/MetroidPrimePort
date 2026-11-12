@@ -221,6 +221,9 @@ public:
   // CPlayer started the morph it wanted, or could not: the request is dropped.
   static void PortScrewMorphStarted(bool started);
   static void PortScrewUnmorphHandled();
+  // While an unmorph the screw attack asked for has no room yet (beside a wall, under a ceiling),
+  // CPlayer tries again each tick until this runs out.
+  static bool PortScrewRetryUnmorph();
   // The morph under way is the screw attack's: entering the ball starts it.
   static bool PortScrewMorphing();
   // From the morph the screw attack asked for until it ends: Samus is mid-jump, not rolling, so
@@ -349,6 +352,9 @@ private:
   float x1c38_spiderLightFactor;
 #ifdef TARGET_PC
   void PortEndScrewAttack();
+  // A hit on the surface with this normal (pointing away from it) ends the attack as Echoes'
+  // CollidedWith and UpdateScrewAttackRecovery do: a wall recoils the ball, a ceiling stops it.
+  void PortScrewHit(const CVector3f& normal);
   void PortComputeScrewAttack(const CFinalInput& input, CStateManager& mgr, float dt);
   void PortApplyScrewAttackDamage(CStateManager& mgr, float dt);
   // Remastered binds the swoosh, inner glow and transition flash through particle variables

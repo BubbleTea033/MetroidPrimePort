@@ -2687,17 +2687,19 @@ void CPlayer::UpdateMorphBallState(float dt, const CFinalInput& input, CStateMan
       x578_morphDuration = morphDuration;
       TransitionFromMorphBallState(dt, mgr);
 #ifdef TARGET_PC
+      if (screwUnmorph) {
+        CMorphBall::PortScrewUnmorphHandled();
+      }
     } else if (screwUnmorph) {
-      // No room to stand: the screw attack ends as a ball.
+      // No room to stand yet (beside a wall, under a ceiling): try again next tick while the ball
+      // is in the air. On the ground, or after a while, it ends as a ball.
+      if (x258_movementState == NPlayer::kMS_OnGround || !CMorphBall::PortScrewRetryUnmorph()) {
+        CMorphBall::PortScrewUnmorphHandled();
+      }
 #endif
     } else {
       DoSfxEffects(CSfxManager::SfxStart(SFXsam_b_malfxn_00, 127, 64, true));
     }
-#ifdef TARGET_PC
-    if (screwUnmorph) {
-      CMorphBall::PortScrewUnmorphHandled();
-    }
-#endif
     break;
   }
   case kMS_Unmorphing:

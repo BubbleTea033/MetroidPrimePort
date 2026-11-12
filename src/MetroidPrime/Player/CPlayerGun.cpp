@@ -2740,7 +2740,13 @@ void CPlayerGun::UpdateWeaponFire(float dt, CPlayerState& playerState, CStateMan
   if (morphState == CPlayer::kMS_Morphed) {
     x835_28_bombReady = false;
     x835_29_powerBombReady = false;
+#ifdef TARGET_PC
+    // No bombs in a screw attack: it keeps the Gameplay input context, so Fire and Power Bomb
+    // still reach the ball (CMorphBall::PortScrewInProgress).
+    if (!x835_31_actorAttached && !CMorphBall::PortScrewInProgress()) {
+#else
     if (!x835_31_actorAttached) {
+#endif
       x835_28_bombReady = true;
       if (x53a_powerBomb != kInvalidUniqueId &&
           !mgr.CanCreateProjectile(x538_playerId, kWT_PowerBomb, 1)) {
