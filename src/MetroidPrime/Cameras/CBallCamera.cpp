@@ -1375,6 +1375,55 @@ void CBallCamera::UpdateUsingFreeLook(float dt, CStateManager& mgr) {
   }
 }
 
+#ifdef TARGET_PC
+// Screw Attack (CMorphBall.hpp): Echoes' CBallCamera::UpdateUsingColliders holds the camera's
+// height through the attack instead of following the ball's jumps, so the view glides forward.
+// It aims 5 units above the Space Jump's height, lowered 0.6 at a time while a 10-unit look
+// ahead at that height meets a wall, and below any ceiling over the camera, and moves there at up
+// to 8 units a second from where it was (`fromZ`). Echoes lowers without a limit and, once within
+// 0.05, takes the unlowered height; here the lowering stops after 20 steps and the camera settles
+// on the lowered one, which does not pull it back up into the wall.
+static float PortScrewAttackCameraZ(const CTransform4f& cameraXf, const CVector3f& camera,
+                                    float fromZ, float dt, CStateManager& mgr) {
+  const float topZ = 5.f + CMorphBall::PortScrewJumpHeight();
+  float targetZ = topZ;
+  TUniqueId hitId = kInvalidUniqueId;
+  CVector3f forward(cameraXf.GetForward().GetX(), cameraXf.GetForward().GetY(), 0.f);
+  if (forward.CanBeNormalized()) {
+    forward.Normalize();
+    CVector3f castPos(camera.GetX(), camera.GetY(), topZ + 0.6f);
+    for (int i = 0; i < 20; ++i) {
+      TEntityList nearList;
+      mgr.BuildNearList(nearList, castPos, forward, 10.f, kLineOfSightFilter, nullptr);
+      if (!mgr.RayWorldIntersection(hitId, castPos, forward, 10.f, kLineOfSightFilter, nearList)
+               .IsValid()) {
+        break;
+      }
+      targetZ -= 0.6f;
+      castPos[kDZ] -= 0.6f;
+    }
+  }
+  const float upward = targetZ - fromZ;
+  if (upward > 0.f) {
+    const CVector3f from(camera.GetX(), camera.GetY(), fromZ);
+    const CVector3f up(0.f, 0.f, 1.f);
+    TEntityList nearList;
+    mgr.BuildNearList(nearList, from, up, upward, kLineOfSightFilter, nullptr);
+    const CRayCastResult hit =
+        mgr.RayWorldIntersection(hitId, from, up, upward, kLineOfSightFilter, nearList);
+    if (hit.IsValid()) {
+      targetZ = rstl::min_val(hit.GetPoint().GetZ() - 0.6f, targetZ);
+    }
+  }
+  const float delta = targetZ - fromZ;
+  if (CMath::AbsF(delta) < 0.05f) {
+    return targetZ;
+  }
+  const float step = 8.f * dt * CMath::Clamp(0.f, CMath::AbsF(delta / 0.25f), 1.f);
+  return fromZ + (delta < 0.f ? -step : step);
+}
+#endif
+
 void CBallCamera::UpdateUsingColliders(float dt, CStateManager& mgr) {
   if (mgr.GetPlayer()->GetBombJumpCounter() == 1) {
     return;
@@ -1681,6 +1730,13 @@ void CBallCamera::UpdateUsingColliders(float dt, CStateManager& mgr) {
   float finalZ = springMag * posDelta.GetZ();
   CVector3f finalPos(x294_dampedPos.GetX() + finalX, x294_dampedPos.GetY() + finalY,
                      x294_dampedPos.GetZ() + finalZ);
+#ifdef TARGET_PC
+  // Screw Attack (CMorphBall.hpp): the camera's height, taken before the elevation rules below,
+  // which Echoes skips during the attack; it replaces their result before the water clamp.
+  const bool screwAttack = player->GetMorphBall()->PortScrewAttackActive();
+  const float screwZ =
+      screwAttack ? PortScrewAttackCameraZ(GetTransform(), finalPos, oldPos.GetZ(), dt, mgr) : 0.f;
+#endif
   if (player->GetMorphBall()->GetSpiderBallState() != CMorphBall::kSBS_Active &&
       !x18e_24_noElevationVelClamp && player->GetVelocityWR().GetZ() > 8.f) {
     CVector3f delta(finalPos.GetX() - oldPos.GetX(), finalPos.GetY() - oldPos.GetY(),
@@ -1704,6 +1760,11 @@ void CBallCamera::UpdateUsingColliders(float dt, CStateManager& mgr) {
     x214_ballCameraSpring.Reset();
   }
 
+#ifdef TARGET_PC
+  if (screwAttack) {
+    finalPos[kDZ] = screwZ;
+  }
+#endif
   finalPos = ClampElevationToWater(finalPos, mgr);
   if (oldBallToCamFlat.Magnitude() < 2.f) {
     if (x3dc_tooCloseActorId != kInvalidUniqueId && x3e0_tooCloseActorDist < 5.f) {

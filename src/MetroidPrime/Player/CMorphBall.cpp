@@ -119,6 +119,7 @@ void CMorphBall::PortScrewMorphStarted(bool started) {
 void CMorphBall::PortScrewUnmorphHandled() { sScrewPhase = kScrewNone; }
 bool CMorphBall::PortScrewRetryUnmorph() { return sScrewRecoverTime < kScrewUnmorphRetryTime; }
 bool CMorphBall::PortScrewMorphing() { return sScrewPhase == kScrewMorphing; }
+float CMorphBall::PortScrewJumpHeight() { return sScrewLastJumpPosition.GetZ(); }
 bool CMorphBall::PortScrewInProgress() {
   return sScrewPhase == kScrewWantsMorph || sScrewPhase == kScrewMorphing ||
          sScrewPhase == kScrewActive;

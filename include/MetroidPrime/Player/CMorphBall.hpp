@@ -230,6 +230,9 @@ public:
   // the input engine keeps the Gameplay context (port_input_devices.cpp GameContexts) and the
   // jump binding keeps pressing jump, which a Morph Ball row for Boost would otherwise take.
   static bool PortScrewInProgress();
+  // The height of the Space Jump the attack started from (Echoes' mLastSpaceJumpPosition), which
+  // the ball camera holds itself above (CBallCamera::UpdateUsingColliders).
+  static float PortScrewJumpHeight();
   bool PortScrewAttackActive() const;
   void PortBeginScrewAttack();
 #endif
