@@ -2171,6 +2171,15 @@ void CBallCamera::UpdateLookAtPosition(float dt, CStateManager& mgr) {
 
   CVector3f prevLook = x1d8_lookPos;
   CVector3f lookAhead = ballPos + lookAtOffset;
+#ifdef TARGET_PC
+  // Screw Attack (CMorphBall.hpp): Echoes' UpdateLookAtPosition looks 2 units below the camera's
+  // own height through the attack (its IsBallCameraTransitioning), not at the ball's: with the
+  // height held too (UpdateUsingColliders), the view keeps one pitch while the ball jumps in it.
+  if (player->GetMorphBall()->PortScrewAttackActive()) {
+    lookAtOffset.SetZ(GetTranslation().GetZ() - 2.f);
+    lookAhead.SetZ(lookAtOffset.GetZ());
+  }
+#endif
   x1c0_lookPosAhead = lookAhead;
   x1cc_fixedLookPos = ballPos + CVector3f(0.f, 0.f, lookAtOffset.GetZ());
 
