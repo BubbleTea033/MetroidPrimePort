@@ -14,6 +14,7 @@
 #include <dolphin/pad.h>
 #include "port_mouse.h"
 #include "port_screw_diag.h"
+#include "port_screw_body.h"
 
 #include "MetroidPrime/Player/CGameOptions.hpp"
 #include "MetroidPrime/Player/CGameState.hpp"
@@ -200,6 +201,11 @@ void DrawControlsOptions() {
   if (screwAttack) {
     // Diagnostic: the last attack's distances, to compare with Echoes'.
     ImGui::TextDisabled("%s", PortScrewDiag::Summary().c_str());
+    // Echoes' spin on Samus (port_screw_body.h): loaded, or how to get it.
+    ImGui::TextDisabled("Spin animation: %s", PortScrewBody::Status().c_str());
+    if (ImGui::SmallButton("Reload spin animation")) {
+      PortScrewBody::Reload();
+    }
   }
   const int springRule = PortAp::SpringBallRule();
   ImGui::BeginDisabled(springRule >= 0);

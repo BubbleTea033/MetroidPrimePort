@@ -35,6 +35,7 @@
 #include "port_debug.h"
 #include "port_dread_samus_mod.h"
 #include "port_log.h"
+#include "port_screw_body.h"
 
 #include "Kyoto/Basics/CBasics.hpp"
 
@@ -750,6 +751,10 @@ void CAnimData::RecalcPoseBuilder(const CCharAnimTime* time) const {
   }
 
   AddAdditiveSegData(*segIdList, statementSet);
+#ifdef TARGET_PC
+  // The Screw Attack's spin from Echoes on the player's body (port_screw_body.h).
+  PortScrewBody::Override(*this, *segIdList, statementSet, **xcc_layoutData);
+#endif
 
 #ifdef TARGET_PC
   // Posed on another skeleton than the animations' (PortPoseLayout; both CINFs have identity bind

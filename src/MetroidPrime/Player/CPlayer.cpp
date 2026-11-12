@@ -10,6 +10,7 @@
 #include "port_freecam.h"
 #include "port_third_person.h"
 #include "port_third_person_body.h"
+#include "port_screw_body.h"
 
 #include "Collision/CInternalCollisionStructure.hpp"
 #include "Kyoto/CDependencyGroup.hpp"
@@ -914,7 +915,10 @@ void CPlayer::ForceGunOrientation(const CTransform4f& xf, CStateManager& mgr) {
   UpdateArmAndGunTransforms(0.01f, mgr);
 }
 
-CPlayer::~CPlayer() { PortDebug::ResetMouseAim(); }
+CPlayer::~CPlayer() {
+  PortDebug::ResetMouseAim();
+  PortScrewBody::End();
+}
 
 bool CPlayer::MouseControlsAllowed(const CStateManager& mgr) const {
   const CCameraManager* cameras = mgr.GetCameraManager();
@@ -1121,6 +1125,19 @@ void CPlayer::Update(float dt, CStateManager& mgr) {
   UpdateMouseAim(mgr);
   SetCoefficientOfRestitutionModifier(0.f);
   UpdateMorphBallTransition(dt, mgr);
+#ifdef TARGET_PC
+  // Screw Attack: Samus spins in place of the ball, with Echoes' clips when they were imported.
+  {
+    const bool spin = x2f8_morphBallState == kMS_Morphed && x768_morphball->PortScrewAttackActive() &&
+                      PortScrewBody::Available();
+    if (spin && !PortScrewBody::Showing()) {
+      PortScrewBody::Begin(ModelData()->AnimationData());
+    } else if (!spin && PortScrewBody::Showing()) {
+      PortScrewBody::End();
+    }
+    PortScrewBody::Tick(dt);
+  }
+#endif
 
   CPlayerState::EBeamId newBeam = mgr.GetPlayerState()->GetCurrentBeam();
   if (x7ec_beam != newBeam) {
@@ -2879,7 +2896,12 @@ void CPlayer::CalculateRenderBounds() {
 
 void CPlayer::PreRender(CStateManager& mgr, const CFrustumPlanes& frustum) {
   if (x2f8_morphBallState == kMS_Morphed) {
+#ifdef TARGET_PC
+    // Port: the Screw Attack's body is lit as Samus is (port_screw_body.h).
+    SetCalculateLighting(PortScrewBody::Showing());
+#else
     SetCalculateLighting(false);
+#endif
     x768_morphball->PreRender(mgr, frustum);
   } else {
     SetCalculateLighting(true);
@@ -3002,6 +3024,26 @@ void CPlayer::Render(const CStateManager& mgr) const {
       break;
     case kMS_Morphed:
       GetModelData()->Touch(mgr, 0);
+#ifdef TARGET_PC
+      // Screw Attack: the spinning body, its middle on the ball's centre, and its arm cannon.
+      if (PortScrewBody::Showing()) {
+        CTransform4f bodyXf = GetTransform();
+        const CVector3f scale = GetModelData()->GetScale();
+        const CVector3f centre = PortScrewBody::Centre();
+        const CVector3f middle(centre.GetX() * scale.GetX(), centre.GetY() * scale.GetY(),
+                               centre.GetZ() * scale.GetZ());
+        bodyXf.SetTranslation(GetTranslation() + CVector3f(0.f, 0.f, x768_morphball->GetBallRadius()) -
+                              bodyXf.Rotate(middle));
+        GetModelData()->Render(mgr, bodyXf, GetActorLights(), CModelFlags::Normal());
+        if (HasTransitionBeamModel()) {
+          x7f0_ballTransitionBeamModel->Touch(mgr, 0);
+          x7f0_ballTransitionBeamModel->Render(
+              mgr, bodyXf * GetModelData()->GetScaledLocatorTransform(rstl::string_l(kGunLocator)),
+              GetActorLights(), CModelFlags::Normal());
+        }
+        break;
+      }
+#endif
       x768_morphball->Render(mgr, GetActorLights());
       break;
     }

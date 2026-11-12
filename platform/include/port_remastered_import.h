@@ -862,5 +862,8 @@ int RunEchoesSuitsImportFromCommandLine(const std::string& imagePath);
 // `--inspect-echoes-anims <image>`: a report on Echoes Samus's animations for the Screw Attack's
 // animation import (echoes_anims_report.txt in the working folder). Returns the exit code.
 int RunEchoesAnimInspectFromCommandLine(const std::string& imagePath);
+// `--import-echoes-screw <image>`: only the Screw Attack's animation (port_echoes_anim.h), which
+// the Echoes suits import also writes. Returns the exit code.
+int RunEchoesScrewImportFromCommandLine(const std::string& imagePath);
 
 }  // namespace PortRemastered

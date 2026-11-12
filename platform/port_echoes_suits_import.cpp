@@ -6,6 +6,8 @@
 #include "port_remastered_import_internal.h"
 
 #include "port_anim_inspect.h"
+#include "port_echoes_anim.h"
+#include "port_paths.h"
 #include "port_echoes_suits.h"
 #include "port_utf8_path.h"
 
@@ -209,6 +211,86 @@ bool MoveEchoesIntoPlace(const fs::path& mods) {
   return true;
 }
 
+constexpr uint32_t kAncsType = 0x414E4353;
+constexpr uint32_t kEchoesGameCinf = 0xF86193FE;  // Echoes in-game Samus (port_echoes_suits.h "game20")
+constexpr uint32_t kPrimeGameCinf = 0xA496DA02;   // Prime's BallTransitionsANCS
+
+// The Screw Attack's clips (port_echoes_anim.h): found by name in Echoes' in-game Samus sets,
+// decoded, retargeted onto Prime's in-game skeleton and written to the user folder. `summary`
+// says what was baked.
+bool BakeScrewAttack(EchoesDisc& echoes, Retail& retail, std::string& summary, std::string& error) {
+  namespace EA = PortEchoesAnim;
+  std::vector<uint8_t> data;
+  std::vector<PortEchoesSuits::EchoesJoint> echoesCinf;
+  PortDread::PrimeSkeleton primeCinf;
+  std::string why;
+  if (!echoes.Read(PortAnimInspect::kCINF, kEchoesGameCinf, data) ||
+      !PortEchoesSuits::ParseCinf(data.data(), data.size(), echoesCinf, &why)) {
+    error = "Echoes' Samus skeleton is unreadable" + (why.empty() ? std::string() : ": " + why);
+    return false;
+  }
+  if (!retail.Read(PortAnimInspect::kCINF, kPrimeGameCinf, data) ||
+      !PortDread::ParseCinf(data.data(), data.size(), primeCinf, &why)) {
+    error = "Prime's Samus skeleton is unreadable" + (why.empty() ? std::string() : ": " + why);
+    return false;
+  }
+  std::vector<EA::Joint> echoesJoints;
+  for (const auto& j : echoesCinf) echoesJoints.push_back({j.id, j.parent, j.name, {}});
+  std::vector<EA::Joint> primeJoints;
+  for (const auto& j : primeCinf.joints) {
+    primeJoints.push_back({j.id, j.parent, j.name, {j.head[0], j.head[1], j.head[2]}});
+  }
+
+  // Each clip's ANIM, from the first set on Echoes' in-game skeleton that names it.
+  const char* const names[] = {EA::kInto, EA::kLoop, EA::kOut, EA::kWallBump, EA::kLand};
+  uint32_t ids[5] = {};
+  const PortAnimInspect::Known known = [&echoes](uint32_t type, uint32_t id) { return echoes.Has(type, id); };
+  for (const uint32_t id : echoes.Ids(kAncsType)) {
+    std::vector<uint8_t> ancs;
+    if (!echoes.Read(kAncsType, id, ancs) || !PortAnimInspect::Mentions(ancs.data(), ancs.size(), kEchoesGameCinf)) {
+      continue;
+    }
+    for (const auto& play : PortAnimInspect::FindPlays(ancs.data(), ancs.size(), known)) {
+      for (size_t i = 0; i < 5; ++i) {
+        if (ids[i] == 0 && play.primitive == names[i]) ids[i] = play.anim;
+      }
+    }
+  }
+  EA::File file;
+  for (size_t i = 0; i < 5; ++i) {
+    if (ids[i] == 0) {
+      summary += std::string(names[i]) + " not found; ";
+      continue;
+    }
+    EA::Anim anim;
+    EA::Baked baked;
+    if (!echoes.Read(PortAnimInspect::kANIM, ids[i], data) || !EA::Decode(data.data(), data.size(), anim, &why) ||
+        !EA::Retarget(anim, echoesJoints, primeJoints, names[i], baked, &why)) {
+      summary += std::string(names[i]) + ": " + why + "; ";
+      continue;
+    }
+    file.clips.push_back(std::move(baked));
+  }
+  const EA::Baked* loop = file.Find(EA::kLoop);
+  if (loop == nullptr) {
+    error = "Echoes' screw attack spin (" + std::string(EA::kLoop) + ") could not be converted: " + summary;
+    return false;
+  }
+  EA::Vec3 sum;
+  for (uint32_t f = 0; f < loop->frames; ++f) sum = EA::Add(sum, EA::Middle(*loop, primeJoints, f));
+  file.centre = {sum.x / loop->frames, sum.y / loop->frames, sum.z / loop->frames};
+  const fs::path out = FromUtf8(PortPaths::UserFolder()) / EA::kFileName;
+  if (!WriteFile(out, EA::Write(file))) {
+    error = "cannot write " + ToUtf8(out);
+    return false;
+  }
+  char line[160];
+  std::snprintf(line, sizeof(line), "%zu screw attack clips, centre %.2f %.2f %.2f, to %s", file.clips.size(),
+                file.centre.x, file.centre.y, file.centre.z, ToUtf8(out).c_str());
+  summary = line + (summary.empty() ? std::string() : " (" + summary + ")");
+  return true;
+}
+
 void RunEchoes(std::string imagePath, fs::path mods) {
   auto fail = [](const std::string& message) { Finish(false, sCancel ? std::string("Cancelled.") : message); };
   SetMessage("Opening the Echoes image");
@@ -253,6 +335,15 @@ void RunEchoes(std::string imagePath, fs::path mods) {
     }
     SetMessage("Converting Samus's suits (" + std::to_string(done) + " of " + std::to_string(total) + ")");
   };
+  {
+    std::string screwSummary;
+    std::string screwError;
+    if (BakeScrewAttack(echoes, retail, screwSummary, screwError)) {
+      PortLog::Write("echoes: %s\n", screwSummary.c_str());
+    } else {
+      PortLog::Write("echoes: screw attack animation: %s\n", screwError.c_str());
+    }
+  }
   PortEchoesSuits::Result result;
   if (!PortEchoesSuits::Import(io, result, error)) {
     fs::remove_all(staging, ec);
@@ -439,6 +530,27 @@ int RunEchoesAnimInspectFromCommandLine(const std::string& imagePath) {
   }
   std::printf("%s== Summary ==\n%s\nwritten to %s\n", report.substr(0, report.find("== Summary ==")).c_str(),
               summary.c_str(), ToUtf8(out).c_str());
+  return 0;
+}
+
+int RunEchoesScrewImportFromCommandLine(const std::string& imagePath) {
+  std::string error;
+  EchoesDisc echoes;
+  if (!echoes.Open(imagePath, error)) {
+    std::fprintf(stderr, "%s\n", error.c_str());
+    return 1;
+  }
+  Retail retail;
+  if (!retail.Index(error)) {
+    std::fprintf(stderr, "%s\n", error.c_str());
+    return 1;
+  }
+  std::string summary;
+  if (!BakeScrewAttack(echoes, retail, summary, error)) {
+    std::fprintf(stderr, "%s\n", error.c_str());
+    return 1;
+  }
+  std::printf("%s\n", summary.c_str());
   return 0;
 }
 
